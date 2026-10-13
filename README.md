@@ -130,15 +130,21 @@ Codex 侧与 Claude 的差异：
 
 ### Qwen Code
 
-Qwen 只认仓库根目录的扩展清单，所以由 GitHub Action 把 `qwen/` 同步成 `qwen-extension` 分支的根目录。原生安装：
+Qwen 只认仓库根目录的扩展清单，所以由 GitHub Action 把 `qwen/` 同步成 `qwen-extension` 分支的根目录。安装时要指向这个分支，有两种写法，任选其一：
 
 ```bash
-qwen extensions install https://github.com/biuayi/miniplan-skills --ref qwen-extension
+# HTTPS 归档，不需要 GitHub 账号；版本号变化时才会更新
+qwen extensions install https://github.com/biuayi/miniplan-skills/archive/refs/heads/qwen-extension.tar.gz
+
+# SSH 加分支，需要配好 GitHub SSH 密钥；跟随分支的每次提交更新
+qwen extensions install git@github.com:biuayi/miniplan-skills.git --ref qwen-extension
 ```
 
-加 `--auto-update` 会自动跟进新版本；加 `--consent` 可以跳过确认。
+不要用 `https://github.com/biuayi/miniplan-skills --ref qwen-extension`。对 HTTPS 的 GitHub 仓库地址，Qwen 会忽略 `--ref`，先读默认分支的 `.claude-plugin/marketplace.json`，然后把 Claude 版转换后装上，这样装出来的角色和钩子在 Qwen 上不能正常工作。
 
-更新：`qwen extensions update miniplan`，按分支提交更新，不需要等版本号变化。
+加 `--auto-update` 会自动跟进更新；加 `--consent` 可以跳过确认。
+
+更新：`qwen extensions update miniplan`。
 
 clone + install.sh：
 
@@ -233,7 +239,7 @@ bash tests/run.sh   # 测试
 
 发布：
 
-1. 修改 `claude/.claude-plugin/plugin.json` 里的 `version`。Claude 和 Codex 的原生更新按版本号判断，版本号不变，用户就收不到更新。
+1. 修改 `claude/.claude-plugin/plugin.json` 里的 `version`。Claude、Codex 的原生更新和 Qwen 的归档安装都按版本号判断，版本号不变，用户就收不到更新。
 2. `./build.sh`，提交后推送到 `main`。
 3. 推送后，`qwen-extension` 分支由 Action 自动同步；第一次可以在 Actions 页面手动运行 qwen-extension。
 

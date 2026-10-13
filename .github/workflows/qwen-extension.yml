@@ -1,6 +1,7 @@
 # Publishes qwen/ as the root of the qwen-extension branch:
 # `qwen extensions install <git url>` reads qwen-extension.json at the repository root only,
-# so Qwen Code users install with `--ref qwen-extension` and `qwen extensions update` follows it.
+# so Qwen Code users install from this branch (its archive URL, or the SSH URL with --ref).
+# An HTTPS repository URL would not work: Qwen then reads the Claude marketplace on the default branch.
 name: qwen-extension
 
 on:
