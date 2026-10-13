@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
-import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, realpathSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, realpathSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { homedir } from 'node:os'
 import { StringDecoder } from 'node:string_decoder'
@@ -65,11 +65,7 @@ function options(argv) {
     else out.plan = realpathSync(resolve(arg))
   }
   if (!out.plan) throw new Error('Usage: node codex-run.mjs <plan> [--dry-run] [--request-id TOKEN] [--output-dir DIR] [--codex-bin PATH]')
-  if (!out.dryRun && !out.requestId) throw new Error('Live execution requires --request-id for durable dispatch accounting')
   if (out.requestId && out.requestId.length > 256) throw new Error('Request identity is too long')
-  const guard = process.env.CODEX_AGENT_GUARD_BUDGET ?? '5'
-  if (!/^[1-9]\d*$/.test(guard) || !Number.isSafeInteger(Number(guard))) throw new Error('CODEX_AGENT_GUARD_BUDGET must be a positive integer')
-  out.guard = Number(guard)
   if (out.codex.includes('/')) out.codex = resolve(out.codex)
   return out
 }
@@ -103,21 +99,39 @@ function validate(value, schema, path = '$') {
   if (type === 'array') value.forEach((item, index) => validate(item, schema.items, path + '[' + index + ']'))
 }
 
-function semaphore(limit) {
-  let live = 0
-  const queue = []
-  const release = () => { live--; if (queue.length) queue.shift()() }
-  return async (fn) => {
-    await new Promise((done) => {
-      const enter = () => { live++; done() }
-      if (live < limit) enter(); else queue.push(enter)
-    })
-    try { return await fn() } finally { release() }
-  }
-}
-
 function privateWrite(path, value) {
   writeFileSync(path, typeof value === 'string' ? value : JSON.stringify(value, null, 2) + '\n', { mode: 0o600 })
+}
+
+function importLegacyCalls(storage, plan) {
+  let used = 0
+  const importedRuns = []
+  for (const entry of readdirSync(storage, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !entry.name.startsWith('run-')) continue
+    const directory = join(storage, entry.name)
+    try {
+      const request = JSON.parse(readFileSync(join(directory, 'request.json'), 'utf8'))
+      if (typeof request.plan !== 'string' || !isAbsolute(request.plan)) throw new Error('Missing absolute plan identity')
+      const identity = existsSync(request.plan) ? realpathSync(request.plan) : resolve(request.plan)
+      if (identity !== plan) continue
+      const snapshots = ['result.json', 'failure.json'].filter((name) => existsSync(join(directory, name)))
+      if (!snapshots.length) throw new Error('Missing completed run or failure evidence')
+      let count
+      for (const name of snapshots) {
+        const evidence = JSON.parse(readFileSync(join(directory, name), 'utf8'))
+        if (!Array.isArray(evidence.calls) || evidence.calls.some((call) => !call || typeof call !== 'object' || Array.isArray(call) || typeof call.role !== 'string')) throw new Error('Invalid launch evidence')
+        if (count !== undefined && count !== evidence.calls.length) throw new Error('Conflicting launch counts')
+        if (Object.hasOwn(evidence, 'spawned') && evidence.spawned !== evidence.calls.length) throw new Error('Incomplete launch evidence')
+        count = evidence.calls.length
+      }
+      used += count
+      if (!Number.isSafeInteger(used)) throw new Error('Launch count exceeds safe integer range')
+      importedRuns.push(entry.name)
+    } catch (error) {
+      throw new Error('Legacy workflow migration blocked at ' + directory + ': ' + error.message)
+    }
+  }
+  return { plan, used, importedRuns }
 }
 
 async function main() {
@@ -125,9 +139,9 @@ async function main() {
   const args = JSON.parse(await checked('python3', ['-I', cli, 'args', opt.plan, '--host', 'codex']))
   if (!Number.isSafeInteger(args.budget) || args.budget < 0) throw new Error('Invalid manual dispatch budget')
   const manualBudget = args.budget
-  args.budget = Math.min(manualBudget, opt.guard)
-  args.concurrency = Math.min(3, Math.max(1, args.concurrency || 1))
-  args.testConcurrency = Math.min(3, Math.max(1, args.testConcurrency || 1))
+  for (const key of ['concurrency', 'testConcurrency']) {
+    if (!Number.isSafeInteger(args[key]) || args[key] < 1) throw new Error('Invalid manual ' + key)
+  }
   args.worktreeRoot ||= join(args.repo, '.codex', 'worktrees')
   const roles = [...new Set(args.tasks.filter((task) => !task.done && !task.main).flatMap((task) => [
     ...task.readers, ...task.gates, ...(task.builder ? ['builder', 'runner'] : []),
@@ -136,21 +150,9 @@ async function main() {
   let gitDir = (await checked('git', ['-C', args.repo, 'rev-parse', '--git-common-dir'])).trim()
   if (!isAbsolute(gitDir)) gitDir = resolve(args.repo, gitDir)
   const storage = join(gitDir, 'miniplan', 'codex')
-  const requestKey = opt.requestId && createHash('sha256').update(opt.requestId).digest('hex')
-  const requestPath = requestKey && join(storage, 'request-' + requestKey + '.json')
-  let request = { id: opt.requestId, limit: opt.guard, used: 0 }
-  const readRequest = () => {
-    if (requestPath && existsSync(requestPath)) request = JSON.parse(readFileSync(requestPath, 'utf8'))
-    if (request.id !== opt.requestId || !Number.isSafeInteger(request.used) || request.used < 0 || !Number.isSafeInteger(request.limit) || request.limit < 1) throw new Error('Invalid durable request budget state')
-    request.limit = Math.min(request.limit, opt.guard, manualBudget)
-    args.budget = Math.min(manualBudget, Math.max(0, request.limit - request.used))
-  }
-  readRequest()
-  const report = { plan: opt.plan, requestId: opt.requestId || null, priorDispatches: request.used, roles, concurrency: args.concurrency, agentConcurrency: 3,
-    testConcurrency: args.testConcurrency, manualBudget, budget: args.budget, tasks: args.tasks.map(({ id, done, main, readers, builder, gates }) => ({ id, done, main, readers, builder, gates })) }
-  if (opt.dryRun) { process.stdout.write(JSON.stringify(report, null, 2) + '\n'); return 0 }
   mkdirSync(storage, { recursive: true, mode: 0o700 })
   const key = createHash('sha256').update(opt.plan).digest('hex')
+  const statePath = join(storage, 'workflow-' + key + '.json')
   const lock = join(storage, key + '.lock')
   const token = randomUUID()
   let fd
@@ -161,50 +163,62 @@ async function main() {
   writeFileSync(fd, JSON.stringify({ pid: process.pid, token, plan: opt.plan, started: new Date().toISOString() }) + '\n')
   closeSync(fd)
   let output
-  const requestLock = join(storage, 'request-' + requestKey + '.lock')
-  let ownsRequestLock = false
   const calls = []
   const logs = []
-  const withAgent = semaphore(3)
   try {
-    try { fd = openSync(requestLock, 'wx', 0o600) } catch (error) {
-      if (error.code !== 'EEXIST') throw error
-      throw new Error('Request lock already exists; verify its owner before recovery: ' + requestLock)
+    const stateExists = existsSync(statePath)
+    let state = stateExists ? JSON.parse(readFileSync(statePath, 'utf8')) : importLegacyCalls(storage, opt.plan)
+    if (state.plan !== opt.plan || !Number.isSafeInteger(state.used) || state.used < 0) throw new Error('Invalid durable workflow budget state')
+    const saveState = () => {
+      const temporary = statePath + '.' + token
+      privateWrite(temporary, state)
+      renameSync(temporary, statePath)
     }
-    writeFileSync(fd, JSON.stringify({ pid: process.pid, token, requestId: opt.requestId }) + '\n')
-    closeSync(fd)
-    ownsRequestLock = true
-    readRequest()
-    report.priorDispatches = request.used
-    report.budget = args.budget
-    const saveRequest = () => {
-      const temporary = requestPath + '.' + token
-      privateWrite(temporary, request)
-      renameSync(temporary, requestPath)
-    }
-    saveRequest()
+    if (!stateExists && state.importedRuns.length) saveState()
+    args.budget = Math.max(0, manualBudget - state.used)
+    const report = { plan: opt.plan, priorDispatches: state.used, workflowDispatches: state.used, roles,
+      concurrency: args.concurrency, testConcurrency: args.testConcurrency, manualBudget, budget: args.budget,
+      tasks: args.tasks.map(({ id, done, main, readers, builder, gates }) => ({ id, done, main, readers, builder, gates })) }
+    if (opt.dryRun) { process.stdout.write(JSON.stringify(report, null, 2) + '\n'); return 0 }
+    saveState()
     if (opt.output) { output = resolve(opt.output); mkdirSync(output, { mode: 0o700 }) }
     else output = mkdtempSync(join(storage, 'run-'))
     privateWrite(join(output, 'request.json'), report)
     let dispatched = 0
-    const agent = (prompt, opts) => withAgent(async () => {
+    const agent = async (prompt, opts) => {
       if (cancelled) throw new Error('Execution cancelled')
       if (dispatched >= args.budget) throw new Error('Dispatch budget exhausted')
       dispatched++
-      request.used++
-      saveRequest()
+      state.used++
+      saveState()
       const role = opts.agentType.replace(/^miniplan:/, '')
       const profileName = 'miniplan-' + role + '-' + randomUUID().replaceAll('-', '')
       const profilePath = resolve(process.env.CODEX_HOME || join(homedir(), '.codex'), profileName + '.config.toml')
       const stem = join(output, 'agent-' + randomUUID())
-      const schema = normalize(opts.schema)
+      const mergeCheck = opts.phase === 'merge'
+      const schema = normalize(mergeCheck ? { type: 'object', properties: { verdict: { type: 'string', enum: ['pass', 'fail', 'infra', 'not_verifiable'] }, evidence: { type: 'string' }, findings: { type: 'array', items: { type: 'string' } } } } : opts.schema)
       const task = args.tasks.find((item) => opts.label.startsWith(item.id + ' '))
       const wt = task ? join(args.worktreeRoot, 'mp-' + args.topic + '-' + (task.worktreeKey || 't' + task.num)) : ''
-      const cwd = task?.builder && ['build', 'gate', 'repair'].includes(opts.phase) && existsSync(wt) ? wt : args.repo
+      const hostGit = async (action, extra = {}) => {
+        const data = { repo: args.repo, worktree: wt, task, integration: args.integration, cli, plan: opt.plan,
+          expectedCommit: task.verifiedBuildCommit || task.existingCommit, ...extra }
+        const operation = await command('python3', ['-I', join(here, 'codex-git.py'), action], { input: JSON.stringify(data) })
+        record.gitOperations ||= []
+        record.gitOperations.push({ action, exitCode: operation.code, stdout: operation.stdout, stderr: operation.stderr })
+        if (operation.code !== 0) throw new Error(operation.stderr.trim() || 'Host Git operation failed')
+        return JSON.parse(operation.stdout)
+      }
+      let cwd = task?.builder && ['build', 'gate', 'repair'].includes(opts.phase) && existsSync(wt) ? wt : args.repo
       const record = { role, label: opts.label, cwd, started: new Date().toISOString(), profile: profileName, transcript: stem + '.jsonl', stderr: stem + '.stderr', result: stem + '.result.json' }
       calls.push(record)
       let stdoutFd, stderrFd
       try {
+        let prepared
+        if (role === 'builder' && task?.builder) {
+          prepared = await hostGit('prepare', { conflict: opts.label.endsWith(' conflict') })
+          cwd = wt
+          record.cwd = cwd
+        }
         await checked('python3', ['-I', helper, 'create', role, '--profile-name', profileName])
         stdoutFd = openSync(record.transcript, 'wx', 0o600)
         stderrFd = openSync(record.stderr, 'wx', 0o600)
@@ -243,9 +257,28 @@ async function main() {
         if (result.code !== 0) throw new Error('Codex exited ' + result.code + ': ' + result.stderr.trim())
         if (eventError) throw new Error(eventError)
         if (!completed) throw new Error('Codex did not report a completed turn')
-        const response = JSON.parse(readFileSync(record.result, 'utf8'))
+        let response = JSON.parse(readFileSync(record.result, 'utf8'))
         validate(response, schema)
         record.response = response
+        if (role === 'builder' && task?.builder && response.status === 'done') {
+          if (response.commit && response.commit !== prepared.head) throw new Error('Builder reported commit does not match worktree HEAD')
+          const committed = await hostGit('commit', { baseHead: prepared.head })
+          task.verifiedBuildCommit = committed.commit
+          response = { ...response, commit: committed.commit }
+          record.hostResponse = response
+        }
+        if (mergeCheck) {
+          if (response.verdict !== 'pass') throw new Error('Merge preflight runner did not pass: ' + response.evidence)
+          response = await hostGit('merge')
+          record.hostResponse = response
+        }
+        if (opts.phase === 'merge' && response.status === 'merged') {
+          if (response.code !== 0) throw new Error('Merged response must report exit code zero')
+          const head = (await checked('git', ['-C', args.repo, 'rev-parse', 'HEAD'])).trim()
+          if (response.commit !== head) throw new Error('Merged response commit does not match integration HEAD')
+          const ancestry = await command('git', ['-C', args.repo, 'merge-base', '--is-ancestor', 'refs/heads/' + task.branchKey, head])
+          if (ancestry.code !== 0) throw new Error('Task branch is not an ancestor of integration HEAD')
+        }
         return response
       } catch (error) { record.error = error.message; throw error }
       finally {
@@ -255,7 +288,7 @@ async function main() {
         record.finished = new Date().toISOString()
         privateWrite(stem + '.metadata.json', record)
       }
-    })
+    }
     const source = readFileSync(join(here, 'run-manual.js'), 'utf8').replace('export const meta', 'const meta')
     const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
     const workflow = new AsyncFunction('args', 'agent', 'parallel', 'log', source)
@@ -267,8 +300,10 @@ async function main() {
     result.logs = logs
     result.cancelled = cancelled
     result.outputDir = output
-    result.requestId = opt.requestId
-    result.requestDispatches = request.used
+    result.manualBudget = manualBudget
+    result.dispatchAllowance = args.budget
+    result.budget = Math.max(0, manualBudget - state.used)
+    result.workflowDispatches = state.used
     privateWrite(join(output, 'result.json'), result)
     if (result.ledger?.length) {
       const ledger = await command('python3', ['-I', cli, 'ledger', opt.plan], { input: result.ledger.join('\n') + '\n', allowCancelled: true })
@@ -283,7 +318,6 @@ async function main() {
     if (output) privateWrite(join(output, 'failure.json'), { error: error.message, calls, logs, cancelled })
     throw error
   } finally {
-    if (ownsRequestLock && JSON.parse(readFileSync(requestLock, 'utf8')).token === token) unlinkSync(requestLock)
     if (JSON.parse(readFileSync(lock, 'utf8')).token === token) unlinkSync(lock)
   }
 }

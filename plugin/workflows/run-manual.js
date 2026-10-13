@@ -189,6 +189,15 @@ function builderPrompt(st, slot, notes) {
   const wt = wtPath(t)
   const P = prefix(wt, slot)
   const owns = (t.owns || []).join(', ')
+  if (A.host === 'codex') return [
+    '你是任务「' + t.title + '」的 builder, 宿主脚本已经创建并校验专属工作树 ' + wt,
+    ...prefixRules(P, wt),
+    '只修改 OWNS: ' + owns + ', 不要创建工作树, 不要执行任何 Git 写操作, 不要改变 Git 作者身份',
+    '宿主将在你返回 done 后独立检查改动范围并提交, commit 字段留空, 不得编造提交',
+    A.setup ? '工作树准备: `' + P + ' && ' + A.setup + '`' : '',
+    notes || '',
+    '--- 契约原文 ---', contractFor(t, 'builder', P),
+  ].join('\n')
   return [
     '你是 ' + t.id + '「' + t.title + '」的 builder，在专属 git 工作树里工作。',
     '',
@@ -218,6 +227,7 @@ function builderPrompt(st, slot, notes) {
 }
 
 function repairPrompt(st, slot, findings) {
+  if (A.host === 'codex') return builderPrompt(st, slot, '只修复下列门禁问题: ' + findings)
   const t = st.t
   const wt = wtPath(t)
   const P = prefix(wt, slot)
@@ -238,6 +248,7 @@ function repairPrompt(st, slot, findings) {
 }
 
 function conflictPrompt(st, slot, conflicts) {
+  if (A.host === 'codex') return builderPrompt(st, slot, '宿主已尝试反向合并集成分支, 只解决以下文件的冲突标记并运行 CHECK, 不要执行 Git 写操作: ' + conflicts.join(', '))
   const t = st.t
   const wt = wtPath(t)
   const P = prefix(wt, slot)
@@ -308,6 +319,13 @@ function mergePrompt(st) {
   const R = 'cd ' + q(A.repo)
   const wt = wtPath(t)
   const br = branchOf(t)
+  if (A.host === 'codex') return [
+    '你是合并前只读 runner, 不要执行任何 Git 写操作',
+    '使用当前 Codex CLI 的 shell/exec_command 终端工具执行命令; 若工具延迟加载, 先发现工具再调用, 不得仅根据提示词猜测退出码',
+    '执行: ' + R + ' && python3 -I ' + q(A.cli) + ' merge-check ' + q(A.plan) + ' ' + t.id + ' ' + br,
+    '退出码为 0 时返回 verdict pass, 否则 fail, evidence 写实际退出码, findings 写问题',
+    '宿主在你通过后再次检查并执行串行合并, 你不能宣称已合并',
+  ].join('\n')
   return [
     '你是 ' + t.id + '「' + t.title + '」的合并 runner，在集成副本 ' + A.repo + '（分支 ' + A.integration + '）里把任务分支并入。',
     '',

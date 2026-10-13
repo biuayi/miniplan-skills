@@ -42,9 +42,25 @@ if mode == 'null':
     response = None
 elif mode == 'invalid':
     response = {'status': 'invented'}
+elif role == 'runner' and mode in ('fake-merge', 'fake-merge-code'):
+    response = {'status': 'merged', 'code': 1 if mode == 'fake-merge-code' else 0, 'commit': git(cwd, 'rev-parse', 'HEAD'), 'conflicts': []}
 elif 'verdict' in schema['properties']:
-    verdict = 'fail' if mode == 'gate-fail' or mode == 'repair' and seen == 0 else 'infra' if mode == 'infra' and seen == 0 else 'pass'
+    if role == 'verifier' and mode == 'gate-mutates-source':
+        (cwd / 'src/feature.txt').write_text('uncommitted gate change\n')
+    if role == 'runner' and mode == 'stray-before-merge':
+        (cwd / 'README').write_text('stray change\n')
+    if role == 'runner' and mode == 'conflict-once' and seen == 0:
+        target = cwd / 'src/feature.txt'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('integration change\n')
+        (cwd / 'README').write_text('integration documentation\n')
+        git(cwd, 'add', 'src/feature.txt', 'README')
+        git(cwd, 'commit', '-qm', 'Update integration feature')
+    verdict = 'fail' if role == 'verifier' and (mode == 'gate-fail' or mode == 'repair' and seen == 0) else 'infra' if role == 'verifier' and mode == 'infra' and seen == 0 else 'pass'
     response = {'verdict': verdict, 'evidence': 'fixture check', 'findings': ['fixture defect'] if verdict == 'fail' else []}
+elif 'code' in schema['properties'] and mode in ('fake-merge', 'fake-merge-code'):
+    response = {'status': 'merged', 'code': 1 if mode == 'fake-merge-code' else 0,
+                'commit': git(cwd, 'rev-parse', 'HEAD'), 'conflicts': []}
 elif 'code' in schema['properties']:
     check_line = next(line.strip() for line in prompt.splitlines() if ' && python3 -I ' in line and ' merge-check ' in line)
     subprocess.run(shlex.split(check_line.split(' && ', 1)[1]), check=True, cwd=cwd, capture_output=True)
@@ -61,11 +77,18 @@ elif 'commit' in schema['properties']:
         cwd = Path(parts[-2])
     target = cwd / 'src' / 'feature.txt'
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text('updated\n' if mode == 'repair' and seen else 'built\n')
-    git(cwd, 'add', 'src/feature.txt')
-    git(cwd, 'commit', '--allow-empty', '-qm', 'Add fixture feature')
-    response = {'status': 'done', 'summary': 'built', 'commit': git(cwd, 'rev-parse', 'HEAD'),
+    target.write_text('updated\n' if mode in ('repair', 'conflict-once') and seen else 'built\n')
+    if mode == 'rogue-commit':
+        git(cwd, 'add', 'src/feature.txt')
+        git(cwd, 'commit', '--allow-empty', '-qm', 'Add fixture feature')
+    if mode == 'scope-violation':
+        (cwd / 'unowned.txt').write_text('unowned\n')
+    response = {'status': 'done', 'summary': 'built', 'commit': '',
                 'changes': ['src/feature.txt'], 'validation': 'fixture', 'risks': '', 'next': ''}
+    if mode == 'fake-build-commit':
+        response['commit'] = '0' * 40
+    elif mode == 'fake-build-branch':
+        git(cwd, 'checkout', '-qb', 'unrelated-fixture')
 else:
     response = {'status': 'done', 'summary': 'read fixture', 'evidence': 'fixture evidence'}
 with trace.open('a', encoding='utf-8') as stream:

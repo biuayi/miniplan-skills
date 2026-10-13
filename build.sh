@@ -57,7 +57,7 @@ mkdir -p codex/skills/miniplan-agents
 cp -r plugin/bin codex/skills/miniplan-agents/bin
 find codex/skills/miniplan-agents/bin -name __pycache__ -prune -exec rm -rf {} +
 mkdir -p codex/skills/miniplan-agents/scripts
-cp plugin/workflows/run-manual.js plugin/workflows/codex-run.mjs plugin/workflows/codex-profile.py codex/skills/miniplan-agents/scripts/
+cp plugin/workflows/run-manual.js plugin/workflows/codex-run.mjs plugin/workflows/codex-profile.py plugin/workflows/codex-git.py codex/skills/miniplan-agents/scripts/
 
 # sanity: nothing Claude-specific may survive in the skill text (SKILL.md and references/)
 if grep -rnE 'miniplan:|subagent_type|host:claude|<!-- /host|~/.claude/' codex/skills/*/SKILL.md codex/skills/*/references; then

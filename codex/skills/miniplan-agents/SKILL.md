@@ -45,7 +45,7 @@ main conversation.
 | `runner` | `llm` | `gpt-6-luna` | `low` |
 | `judge` | `llm` | `gpt-6.1-sol` | `xhigh` |
 
-## Invariants
+## Prompt mode invariants
 
 - Keep fixed role routing on the models listed above; do not select Grok automatically.
 - Keep the main conversation on the model selected by the user, including a manual
@@ -61,7 +61,7 @@ main conversation.
 Agent instructions prohibit nested delegation. Do not work around that boundary
 with a generic spawn.
 
-## Budget: 5 Children per User Request
+## Prompt mode budget: 5 Children per User Request
 
 The user-level `PreToolUse(Agent)` hook in `~/.codex/hooks.json` runs
 `~/.codex/hooks/agent-guard.sh` before every spawn. The guard keys its atomic
@@ -88,11 +88,14 @@ model, effort, sandbox, and developer instructions. It does not set a default
 subagent model or supply per-call model/effort flags. Nested delegation is
 disabled in these processes.
 
-The adapter enforces at most three live role processes and the request's
-agent budget itself; these independent CLI threads do not pass through the
-interactive `Agent` hook. Account for all earlier spawns in the request before
-running it. Read the working skill's Codex workflow reference for preflight,
-evidence, locking, and resume behavior.
+Script mode follows the approved manual: `并发` is the number of active tasks
+(default 6), `测试并发` limits verifier calls separately (default 3), and
+`预算` caps launches across the whole manual. Readers and gates may launch
+multiple roles within a task slot; task slots are not a global process cap.
+The interactive three-thread/five-child limits and `CODEX_AGENT_GUARD_BUDGET`
+apply to prompt mode only. The adapter persists whole-manual consumption
+across resumes and does not reset it for a new user request. Read the working
+skill's Codex workflow reference for preflight, evidence, locking, and resume.
 
 ## Parallel Dispatch
 
@@ -121,7 +124,7 @@ A budget is advisory; no hook enforces it. On reaching it the child stops and
 returns `partial`, saying what is left. Raise it in the contract when the task
 needs more, never by silence.
 
-## Budget: 5 Children per User Request
+## Prompt mode budget: 5 Children per User Request
 
 The hook counts spawns per user prompt and denies the sixth. Harness-injected
 turns (a subagent's completion notice, an auto-continue nudge) do not reset
@@ -137,11 +140,17 @@ the counter; only a real user prompt does. Spend it so:
   round only when the user asks.
 - Main does design, triage, integration, and the final report itself.
 
-Concurrency on Codex: at most three child threads active at once.
+Prompt mode on Codex: at most three child threads active at once.
 
-Raising the budget on Codex: there is no per-session grant. Export
+Raising the prompt-mode budget on Codex: there is no per-session grant. Export
 `CODEX_AGENT_GUARD_BUDGET=<N>` before launching `codex` for a run the user
 approved at manual time; otherwise split the work across user prompts of 5.
+
+Script mode uses the manual's `并发` task slots (default 6), separate
+`测试并发` verifier semaphore (default 3), and whole-manual `预算`.
+Interactive thread limits and request counters do not cap these CLI processes.
+Consumption persists across resumes; raising the approved manual budget is
+required to authorize further launches after exhaustion.
 
 Typical shapes: investigation = 2-3 `scout` in one wave; implementation =
 (1-2 `scout` in parallel) -> main designs -> 1 `builder` -> 1 gate; command

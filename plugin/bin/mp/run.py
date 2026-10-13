@@ -123,6 +123,21 @@ def cmd_args(ns):
         return 2
     header = m['header']
     host = getattr(ns, 'host', 'claude')
+    limits = {}
+    if host == 'codex':
+        for key, default, minimum in (('预算', None, 0), ('并发', 6, 1), ('测试并发', 3, 1)):
+            raw = header.get(key)
+            if raw is None and default is not None:
+                limits[key] = default
+                continue
+            if raw is None or re.fullmatch(r'[0-9]+', raw.strip()) is None:
+                _err('%s 必须是明确的整数' % key)
+                return 1
+            value = int(raw.strip())
+            if value < minimum or value > 9007199254740991:
+                _err('%s 超出有效范围' % key)
+                return 1
+            limits[key] = value
     exclude_line = '.codex/worktrees/' if host == 'codex' else EXCLUDE_LINE
     if not header.get('状态', '').startswith('已批准'):
         _err('手册状态不是"已批准"，不能派发')
@@ -152,6 +167,10 @@ def cmd_args(ns):
             _err('%s/task-scope.txt 存在，请先清理' % area)
             return 1
     errors = _lint_errors(m)
+    if host == 'codex':
+        errors = [line for line in errors if not re.search(r'\bE_BUDGET\b', line)]
+        if limits['预算'] == 0:
+            errors = [line for line in errors if not re.search(r'\bE_HEADER_INT\s+预算\s*$', line)]
     if errors:
         for line in errors:
             _err(line)
@@ -169,8 +188,9 @@ def cmd_args(ns):
     cli = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'miniplan.py')
     out = {
         'plan': plan, 'planSha': plan_sha, 'repo': repo, 'topic': topic, 'integration': integration,
-        'concurrency': manual.concurrency(m), 'testConcurrency': manual.test_concurrency(m),
-        'budget': manual.budget(m), 'setup': header.get('工作树准备') or None,
+        'concurrency': limits['并发'] if host == 'codex' else manual.concurrency(m),
+        'testConcurrency': limits['测试并发'] if host == 'codex' else manual.test_concurrency(m),
+        'budget': limits['预算'] if host == 'codex' else manual.budget(m), 'setup': header.get('工作树准备') or None,
         'slotEnv': header.get('槽位环境') or None, 'cli': cli,
         'tasks': [_task_args(t, m['progress'], not ns.small) for t in m['tasks']],
     }

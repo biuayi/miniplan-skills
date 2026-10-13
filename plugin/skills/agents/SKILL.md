@@ -73,7 +73,7 @@ A budget is advisory; no hook enforces it. On reaching it the child stops and
 returns `partial`, saying what is left. Raise it in the contract when the task
 needs more, never by silence.
 
-## Budget: 5 Children per User Request
+## Prompt mode budget: 5 Children per User Request
 
 The hook counts spawns per user prompt and denies the sixth. Harness-injected
 turns (a subagent's completion notice, an auto-continue nudge) do not reset
@@ -116,11 +116,17 @@ The grant is keyed to the current session. Grant only on approval recorded in
 the manual header, and never skip a gate under it.
 <!-- /host -->
 <!-- host:codex
-Concurrency on Codex: at most three child threads active at once.
+Prompt mode on Codex: at most three child threads active at once.
 
-Raising the budget on Codex: there is no per-session grant. Export
+Raising the prompt-mode budget on Codex: there is no per-session grant. Export
 `CODEX_AGENT_GUARD_BUDGET=<N>` before launching `codex` for a run the user
 approved at manual time; otherwise split the work across user prompts of 5.
+
+Script mode uses the manual's `并发` task slots (default 6), separate
+`测试并发` verifier semaphore (default 3), and whole-manual `预算`.
+Interactive thread limits and request counters do not cap these CLI processes.
+Consumption persists across resumes; raising the approved manual budget is
+required to authorize further launches after exhaustion.
 -->
 
 Typical shapes: investigation = 2-3 `scout` in one wave; implementation =

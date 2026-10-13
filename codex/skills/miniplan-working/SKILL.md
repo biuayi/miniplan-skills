@@ -38,18 +38,16 @@ gate, repair, and merge scheduler with the Claude workflow.
 
 1. Validate with
    `node ~/.codex/skills/miniplan-agents/scripts/codex-run.mjs <plan> --dry-run`.
-2. Run the same command without `--dry-run`, adding
-   `--request-id <token>` identifying this user request; retain the same
-   token for every resume within the request so earlier launches still count.
-   A new user request can use a new token. While it runs, do not dispatch
-   other agents or edit the integration copy. The script counts all role
-   launches and limits live Codex processes to three.
+2. Run the same command without `--dry-run`. While it runs, do not dispatch
+   other agents or edit the integration copy. The script follows the manual's
+   task concurrency and separate verifier concurrency, and counts every role
+   launch against the whole-manual budget across resumes.
 3. Read `result.json` and the gate evidence in the reported output directory.
    The script applies its returned ledger itself. Exit zero means every task
    is complete or was already completed; blocked, failed, and waiting-main
    outcomes return nonzero and preserve evidence and unfinished worktrees.
-4. Handle main tasks and reported blockers, then resume only after accounting
-   for the request's remaining agent budget. Do not reset the budget by
+4. Handle main tasks and reported blockers, then resume within the
+   manual's remaining budget. Do not reset the budget by
    rerunning the script. When complete, check the merged diff, mark the manual
    complete, and commit/push using the user's existing authorization.
 

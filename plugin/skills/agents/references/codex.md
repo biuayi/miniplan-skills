@@ -17,7 +17,7 @@ main conversation.
 | `runner` | `llm` | `gpt-6-luna` | `low` |
 | `judge` | `llm` | `gpt-6.1-sol` | `xhigh` |
 
-## Invariants
+## Prompt mode invariants
 
 - Keep fixed role routing on the models listed above; do not select Grok automatically.
 - Keep the main conversation on the model selected by the user, including a manual
@@ -33,7 +33,7 @@ main conversation.
 Agent instructions prohibit nested delegation. Do not work around that boundary
 with a generic spawn.
 
-## Budget: 5 Children per User Request
+## Prompt mode budget: 5 Children per User Request
 
 The user-level `PreToolUse(Agent)` hook in `~/.codex/hooks.json` runs
 `~/.codex/hooks/agent-guard.sh` before every spawn. The guard keys its atomic
@@ -60,11 +60,14 @@ model, effort, sandbox, and developer instructions. It does not set a default
 subagent model or supply per-call model/effort flags. Nested delegation is
 disabled in these processes.
 
-The adapter enforces at most three live role processes and the request's
-agent budget itself; these independent CLI threads do not pass through the
-interactive `Agent` hook. Account for all earlier spawns in the request before
-running it. Read the working skill's Codex workflow reference for preflight,
-evidence, locking, and resume behavior.
+Script mode follows the approved manual: `并发` is the number of active tasks
+(default 6), `测试并发` limits verifier calls separately (default 3), and
+`预算` caps launches across the whole manual. Readers and gates may launch
+multiple roles within a task slot; task slots are not a global process cap.
+The interactive three-thread/five-child limits and `CODEX_AGENT_GUARD_BUDGET`
+apply to prompt mode only. The adapter persists whole-manual consumption
+across resumes and does not reset it for a new user request. Read the working
+skill's Codex workflow reference for preflight, evidence, locking, and resume.
 
 ## Parallel Dispatch
 

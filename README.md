@@ -77,18 +77,18 @@ max_concurrent_threads_per_session = 3
 
 ## Workflow 模式与 miniplan.py
 
-Claude Code 上，working 批准手册后调用 `plugin/workflows/run-manual.js`：依赖就绪即派发，每个 builder 在独立 git worktree 里并行，过门禁后串行合并回手册的集成分支，主线程只在运行结束、需要用户的动作或失败时介入。运行期间 `run-guard.sh` 拦截不合规的 Workflow 调用并在未完成时阻止停止，`agent-guard.sh` 拒绝手动派 builder。Codex 通过 `codex exec` 接入同一调度器，支持脚本自动派发、结构化结果和自动记账；运行器不可用时才走提示词模式。
+Claude Code 上，working 批准手册后调用 `plugin/workflows/run-manual.js`：依赖就绪即派发，每个 builder 在独立 git worktree 里并行，过门禁后串行合并回手册的集成分支，主线程只在运行结束、需要用户的动作或失败时介入。运行期间 `run-guard.sh` 拦截不合规的 Workflow 调用并在未完成时阻止停止，`agent-guard.sh` 拒绝手动派 builder。Codex 通过官方 `codex exec` 适配器接入同一调度器（不调用 Claude 的原生 `Workflow` 工具），支持脚本自动派发、结构化结果和自动记账；运行器不可用时才走提示词模式。
 
 Codex 安装后可直接检查与运行已批准的任务手册：
 
 ```bash
 node ~/.codex/skills/miniplan-agents/scripts/codex-run.mjs /absolute/path/to/plan.md --dry-run
-node ~/.codex/skills/miniplan-agents/scripts/codex-run.mjs /absolute/path/to/plan.md --request-id <request-token>
+node ~/.codex/skills/miniplan-agents/scripts/codex-run.mjs /absolute/path/to/plan.md
 ```
 
-需要 Node.js 18+、Python 3.11+ 和支持独立配置 profile、JSON 事件与输出 schema 的 Codex CLI。每个进程从 `~/.codex/agents/<role>.toml` 读取角色配置，现有模型、provider、推理强度和 sandbox 由角色文件决定；临时 profile 在退出后清理，不修改主会话模型。并发上限为三个角色进程，派发总预算默认五个，已获用户批准的放宽通过 `CODEX_AGENT_GUARD_BUDGET` 传入。独立 CLI 进程不经过交互会话的 Agent hook，因此脚本自行执行计数和并发限制。结果、JSONL 事件与 stderr 默认保留在仓库 Git 元数据目录，脚本写回进度账本；未验证、失败或需要主线程处理时返回非零退出码。
+需要 Node.js 18+、Python 3.11+ 和支持独立配置 profile、JSON 事件与输出 schema 的 Codex CLI。每个进程从 `~/.codex/agents/<role>.toml` 读取角色配置，现有模型、provider、推理强度和 sandbox 由角色文件决定；临时 profile 在退出后清理，不修改主会话模型。脚本遵循手册的 `并发`（默认 6 个任务槽位）、`测试并发`（默认 3 个 verifier）与整份手册 `预算`。任务槽位不是角色进程总上限；交互 Agent 的线程限制、每请求预算与 `CODEX_AGENT_GUARD_BUDGET` 不适用于脚本。累计派发在 Git 元数据内持久化，恢复或更换请求不会清零；耗尽后须提高已批准的手册预算。结果、JSONL 事件与 stderr 默认保留在仓库 Git 元数据目录，脚本写回进度账本。工作树创建、范围检查、提交和合并由宿主脚本执行，角色保留沙箱，只修改文件或提供独立门禁证据；未验证、失败或需要主线程处理时返回非零退出码。
 
-官方接口依据：[非交互模式](https://developers.openai.com/codex/noninteractive/)、[SDK](https://developers.openai.com/codex/sdk/)、[配置 profile](https://developers.openai.com/codex/config-advanced/)。完整运行与恢复说明见 [Codex workflow](plugin/skills/working/references/codex-workflow.md)。
+官方接口依据：[非交互模式](https://developers.openai.com/codex/noninteractive/)、[SDK](https://developers.openai.com/codex/sdk/)、[配置 profile](https://developers.openai.com/codex/config-advanced/)。完整运行与恢复说明见 [Codex workflow](plugin/skills/working/references/codex-workflow.md)，设计依据、真实测量与已知边界见 [实现核验](docs/codex-workflow.md)。
 
 手册的解析、自检和记账由 CLI 完成（Codex 安装后路径为 `~/.codex/skills/miniplan-agents/bin/miniplan.py`）：
 

@@ -6,6 +6,33 @@ from _util import run_cli
 
 
 class CodexArgs(RunBase):
+    def test_workflow_limits_use_manual_defaults(self):
+        self.write_plan(self.plan_text.replace('并发：6\n', '').replace('测试并发：2\n', ''))
+        args = self.args()
+        self.assertEqual((args['concurrency'], args['testConcurrency']), (6, 3))
+
+    def test_exhausted_manual_budget_can_reach_scheduler(self):
+        for budget in (0, 1):
+            self.write_plan(self.plan_text.replace('预算：20', '预算：' + str(budget)))
+            self.assertEqual(self.args()['budget'], budget)
+
+    def test_invalid_workflow_limits_are_rejected(self):
+        for key, original, values in (('预算', '20', ('默认', '-1', '3.5', '9007199254740992')),
+                                       ('并发', '6', ('0', '-1', '3.5')),
+                                       ('测试并发', '2', ('0', '-1', '3.5'))):
+            for value in values:
+                with self.subTest(key=key, value=value):
+                    self.write_plan(self.plan_text.replace(key + '：' + original, key + '：' + value))
+                    result = run_cli('args', self.plan, '--host', 'codex')
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(key, result.stderr)
+
+    def test_other_manual_lint_errors_still_block_dispatch(self):
+        self.write_plan(self.plan_text.replace('预算：20', '预算：0').replace('DEPENDS  none', 'DEPENDS  T999', 1))
+        result = run_cli('args', self.plan, '--host', 'codex')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('lint', result.stderr)
+
     def args(self):
         result = run_cli('args', self.plan, '--host', 'codex')
         self.assertEqual(result.returncode, 0, result.stderr)
