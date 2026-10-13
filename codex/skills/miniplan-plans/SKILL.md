@@ -5,6 +5,10 @@ description: Use after a design has been approved through $miniplan-brainstormin
 
 # Plans
 
+Installed as a Codex plugin, these skills are listed as `miniplan:<name>` (for example `miniplan:miniplan-agents`); a reference such as `$miniplan-agents` means that skill.
+
+`<miniplan-agents>` below is the absolute directory of the `miniplan-agents` skill as listed among your skills (`~/.codex/skills/miniplan-agents` for a script install); expand it before running a command.
+
 Input: an approved design file. Output: a task manual the `working` skill can
 execute without re-deriving anything, saved as
 `docs/miniplan/YYYY-MM-DD-<topic>-plan.md` from `references/plan-template.md`.
@@ -74,7 +78,7 @@ Every manual opens with one activity-on-arrow network under `## 箭线图`, abov
 `## Tasks`. It is generated, never drawn by hand:
 
 ```bash
-python3 -I ~/.codex/skills/miniplan-agents/bin/miniplan.py diagram --write <plan>
+python3 -I "<miniplan-agents>/bin/miniplan.py" diagram --write <plan>
 ```
 
 `diagram` builds it from DEPENDS and `working` refreshes the status glyphs
@@ -165,8 +169,8 @@ from `$miniplan-agents`, say so in the approval question.
 1. Coverage: each A<i> maps to at least one CHECK; each CHECK maps back.
 2. Consistency: names, paths, signatures agree across tasks and with the
    design; interfaces a CHECK refers to are defined in some DELIVER.
-3. Run `python3 -I ~/.codex/skills/miniplan-agents/bin/miniplan.py diagram --write <plan>`,
-   then `python3 -I ~/.codex/skills/miniplan-agents/bin/miniplan.py lint <plan>`. Present
+3. Run `python3 -I "<miniplan-agents>/bin/miniplan.py" diagram --write <plan>`,
+   then `python3 -I "<miniplan-agents>/bin/miniplan.py" lint <plan>`. Present
    the manual only when lint exits 0: it covers header keys, the nine task
    fields, dependencies and resources, roles and OWNS, plan-failure phrases, the
    diagram, width, and budget. Read its warnings; a mid-graph `main` task or a

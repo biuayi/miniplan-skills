@@ -2,6 +2,12 @@
 
 ## 未发布
 
+- 按 agent 工具分目录：`plugin/` 改名为 `claude/`（唯一源），`codex/` 与新增的 `qwen/` 由 `build.sh` 从它生成
+- 新增 Qwen Code 扩展 `qwen/`：`qwen-extension.json`，角色用不带前缀的名字并继承主会话模型（只读角色禁写，builder 用 `approvalMode: auto-edit`），skill 路径固定为 `~/.qwen/extensions/miniplan`，workflow 用不带前缀的 `agentType` 并要求子代理经 `structured_output` 交回结果
+- 支持各工具原生市场从 GitHub 安装与更新：根目录 `.claude-plugin/marketplace.json`（Claude Code，→ `./claude`）、`.agents/plugins/marketplace.json`（Codex，→ `./codex`，新增 `codex/.codex-plugin/plugin.json`）；GitHub Action 把 `qwen/` 同步为 `qwen-extension` 分支根目录，供 `qwen extensions install --ref qwen-extension`
+- skill 正文不再写死安装路径：Claude 用 `${CLAUDE_PLUGIN_ROOT}`（SessionStart 注入的 agents 正文同样替换），Codex 用 `<miniplan-agents>` 并说明插件模式下的 `miniplan:` 前缀，Qwen 用固定扩展路径；`references/` 里的 CLI 路径改为不带目录的 `miniplan.py`
+- `agent-guard.sh` 与 `miniplan.py` 兼容 Qwen：会话 id 回退到 `QWEN_CODE_SESSION_ID`，`reset --require-submitted` 跳过没有 `submitted_prompt` 的续写事件
+- `install.sh` 新增 `qwen`（已安装时卸载重装）；`claude` 改为把 clone 注册为本地市场 `miniplan-skills` 并原地加载，旧的 `~/.claude/skills/miniplan` 移到备份；Codex 的 `hooks.json` 移到 `codex/hooks/hooks.json`，用 `${PLUGIN_ROOT}`，脚本安装时替换为 `$CODEX_HOME`
 - Codex 新增 `codex-run.mjs`，通过官方 `codex exec` 接口自动执行同一任务调度器，保留角色文件的 provider、模型、推理强度与 sandbox
 - 修正调度限制：默认 6 个任务槽位、独立的 3 个 verifier 许可、持久化整份手册预算，交互模式的 3/5 限制不适用于脚本；新增、互斥运行锁、结构化结果检查、独立验收、失败修复、证据留存和自动记账
 - Git 写操作改由宿主脚本执行，保持角色沙箱；合并成功必须通过实际 HEAD 与分支祖先检查，旧执行证据迁移时不重置预算

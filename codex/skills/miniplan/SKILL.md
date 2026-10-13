@@ -5,6 +5,8 @@ description: Main entry point of the miniplan pipeline. Invoke as $miniplan <req
 
 # $miniplan
 
+Installed as a Codex plugin, these skills are listed as `miniplan:<name>` (for example `miniplan:miniplan-agents`); a reference such as `$miniplan-agents` means that skill.
+
 It decides which stage to enter and hands off to that stage's skill; it does
 no design, planning, or dispatch itself and spawns nothing. Roles, budget, and contracts come from `$miniplan-agents`. User-facing
 text is in the user's language.

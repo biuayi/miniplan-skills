@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CLI = os.path.join(ROOT, 'plugin', 'bin', 'miniplan.py')
+CLI = os.path.join(ROOT, 'claude', 'bin', 'miniplan.py')
 SCENARIOS = ('parallel', 'failure', 'resource', 'conflict')
 PLAN_NAME = '2026-01-01-%s-plan.md'
 INDENT = ' ' * 9

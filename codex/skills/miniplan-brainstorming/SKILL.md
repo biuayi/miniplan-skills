@@ -5,6 +5,8 @@ description: Use when a request is broad, loosely specified, or spans several mo
 
 # Brainstorming
 
+Installed as a Codex plugin, these skills are listed as `miniplan:<name>` (for example `miniplan:miniplan-agents`); a reference such as `$miniplan-agents` means that skill.
+
 Turn a vague request into an approved design. The main conversation owns the
 dialogue, the design, and every decision. User-facing text is in the user's
 language. Roles, budget, and contracts come

@@ -6,7 +6,7 @@ import unittest
 
 from _util import ROOT, TESTS
 
-SCRIPT = os.path.join(ROOT, 'plugin', 'workflows', 'run-manual.js')
+SCRIPT = os.path.join(ROOT, 'claude', 'workflows', 'run-manual.js')
 SIM = os.path.join(TESTS, 'wf_sim.mjs')
 
 

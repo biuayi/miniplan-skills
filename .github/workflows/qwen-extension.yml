@@ -1,0 +1,38 @@
+# Publishes qwen/ as the root of the qwen-extension branch:
+# `qwen extensions install <git url>` reads qwen-extension.json at the repository root only,
+# so Qwen Code users install with `--ref qwen-extension` and `qwen extensions update` follows it.
+name: qwen-extension
+
+on:
+  push:
+    branches: [main]
+    paths: ['qwen/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: qwen-extension
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Commit qwen/ as the branch root
+        run: |
+          set -euo pipefail
+          tree=$(git rev-parse HEAD:qwen)
+          parent=$(git rev-parse -q --verify refs/remotes/origin/qwen-extension || true)
+          if [ -n "$parent" ] && [ "$(git rev-parse "$parent^{tree}")" = "$tree" ]; then
+            echo "qwen-extension already matches qwen/ at $GITHUB_SHA"; exit 0
+          fi
+          export GIT_AUTHOR_NAME='github-actions[bot]' GIT_AUTHOR_EMAIL='41898282+github-actions[bot]@users.noreply.github.com'
+          export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME" GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+          commit=$(git commit-tree "$tree" ${parent:+-p "$parent"} -m "qwen extension from $GITHUB_SHA")
+          git push origin "$commit:refs/heads/qwen-extension"

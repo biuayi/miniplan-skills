@@ -1,0 +1,18 @@
+{
+  "description": "miniplan: enforce named Codex agent routing and a five-spawn budget per turn.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Agent$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}/hooks/agent-guard.sh\" check",
+            "timeout": 10,
+            "statusMessage": "Checking subagent routing and budget"
+          }
+        ]
+      }
+    ]
+  }
+}

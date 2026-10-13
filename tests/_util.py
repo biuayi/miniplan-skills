@@ -4,7 +4,7 @@ import sys
 
 TESTS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(TESTS)
-CLI = os.path.join(ROOT, 'plugin', 'bin', 'miniplan.py')
+CLI = os.path.join(ROOT, 'claude', 'bin', 'miniplan.py')
 
 
 def run_cli(*args, stdin=None, env=None, cwd=None):

@@ -161,7 +161,7 @@ class CliShape(unittest.TestCase):
 class MarkerPath(unittest.TestCase):
     def test_marker_path_uses_tmpdir_and_uid(self):
         code = ('import sys; sys.path.insert(0, %r)\nfrom mp.manual import marker_path\nprint(marker_path("s1"))'
-                % os.path.join(ROOT, 'plugin', 'bin'))
+                % os.path.join(ROOT, 'claude', 'bin'))
         env = dict(os.environ, TMPDIR='/var/x')
         r = subprocess.run([sys.executable, '-I', '-c', code], env=env, capture_output=True, text=True)
         self.assertEqual(r.stdout.strip(), '/var/x/miniplan-run-%d/s1.json' % os.getuid())

@@ -1,0 +1,12 @@
+{
+  "name": "miniplan-skills",
+  "interface": { "displayName": "miniplan" },
+  "plugins": [
+    {
+      "name": "miniplan",
+      "source": { "source": "local", "path": "./codex" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

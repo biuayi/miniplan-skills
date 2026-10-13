@@ -8,8 +8,8 @@ ask for a new API key or change the main conversation's model.
 ## Commands
 
 ```bash
-node ~/.codex/skills/miniplan-agents/scripts/codex-run.mjs /absolute/path/to/plan.md --dry-run
-node ~/.codex/skills/miniplan-agents/scripts/codex-run.mjs /absolute/path/to/plan.md
+node <miniplan-agents>/scripts/codex-run.mjs /absolute/path/to/plan.md --dry-run
+node <miniplan-agents>/scripts/codex-run.mjs /absolute/path/to/plan.md
 ```
 
 `--output-dir` chooses where evidence is retained; otherwise it lives under

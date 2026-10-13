@@ -13,8 +13,8 @@ import unittest
 
 from _util import CLI, ROOT, fx, make_repo, run_cli
 
-ADAPTER = os.path.join(ROOT, 'plugin', 'workflows', 'codex-run.mjs')
-PROFILE = os.path.join(ROOT, 'plugin', 'workflows', 'codex-profile.py')
+ADAPTER = os.path.join(ROOT, 'claude', 'workflows', 'codex-run.mjs')
+PROFILE = os.path.join(ROOT, 'claude', 'workflows', 'codex-profile.py')
 
 
 def manual(agents='verifier read-only', count=1, main=False, budget=40, concurrency=6, test_concurrency=2):

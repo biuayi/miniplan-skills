@@ -26,4 +26,4 @@
 
 这份核验不等同于任意项目的完整生产验收。真实冲突恢复尚未用模型测试；当前真实写入案例只有一个文件。需要主线程完成的手册节点仍返回等待状态；Codex 没有安装 Claude 的 Workflow/Stop 钩子，运行器依靠自身锁、持久预算和退出状态控制执行。
 
-完整命令与恢复规则见 [运行说明](../plugin/skills/working/references/codex-workflow.md)。
+完整命令与恢复规则见 [运行说明](../claude/skills/working/references/codex-workflow.md)。

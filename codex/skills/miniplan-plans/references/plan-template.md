@@ -30,7 +30,7 @@ flowchart LR
 最长链：3 个任务（T1→T2→T4；等长另有 1 条），至少 3 层
 状态：⏳未开始 🔄进行中 ✅完成 🔁返工 ❌失败（working 每次记账后同步刷新）
 
-（本段由 `python3 -I ~/.codex/skills/miniplan-agents/bin/miniplan.py diagram --write <plan>` 按 DEPENDS 生成，不手画。示例只作格式参考；USES 同一资源的两个任务之间画 `-.->|"资源:<名>"|` 虚工作。）
+（本段由 `miniplan.py diagram --write <plan>` 按 DEPENDS 生成，不手画。示例只作格式参考；USES 同一资源的两个任务之间画 `-.->|"资源:<名>"|` 虚工作。）
 
 ## Tasks
 

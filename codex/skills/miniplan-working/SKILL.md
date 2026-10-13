@@ -5,6 +5,10 @@ description: Use when an approved task manual from $miniplan-plans exists and th
 
 # Working
 
+Installed as a Codex plugin, these skills are listed as `miniplan:<name>` (for example `miniplan:miniplan-agents`); a reference such as `$miniplan-agents` means that skill.
+
+`<miniplan-agents>` below is the absolute directory of the `miniplan-agents` skill as listed among your skills (`~/.codex/skills/miniplan-agents` for a script install); expand it before running a command.
+
 Input: the path of an approved task manual. Roles, budget, contracts, and the
 budget grant command come from `$miniplan-agents`. The main conversation
 dispatches, collects, gates, and reports.
@@ -18,7 +22,7 @@ dispatches, collects, gates, and reports.
 2. Read `## Progress`. A task with a `T<n>: complete` line is done: do not
    re-dispatch it. A task whose last line is `T<n>: repair 1` is mid-loop:
    resume at the re-gate. Resume at the first task without a line.
-3. Run `python3 -I ~/.codex/skills/miniplan-agents/bin/miniplan.py lint <plan>`. Exit
+3. Run `python3 -I "<miniplan-agents>/bin/miniplan.py" lint <plan>`. Exit
    0 is required before any dispatch; a defect list means the manual goes back
    to `$miniplan-plans`.
 4. Pre-flight: read the manual critically once. A CHECK with no command, a
@@ -37,7 +41,7 @@ Use the Codex script adapter for an approved task-block manual. Read
 gate, repair, and merge scheduler with the Claude workflow.
 
 1. Validate with
-   `node ~/.codex/skills/miniplan-agents/scripts/codex-run.mjs <plan> --dry-run`.
+   `node <miniplan-agents>/scripts/codex-run.mjs <plan> --dry-run`.
 2. Run the same command without `--dry-run`. While it runs, do not dispatch
    other agents or edit the integration copy. The script follows the manual's
    task concurrency and separate verifier concurrency, and counts every role
@@ -58,7 +62,7 @@ run by the script. Do not use that fallback to bypass a failed preflight.
 Used for old-format manuals and wherever a scripted run is unavailable.
 
 - **Ready set.** On every completion notice, first run
-  `python3 -I ~/.codex/skills/miniplan-agents/bin/miniplan.py ready <plan>`. In the
+  `python3 -I "<miniplan-agents>/bin/miniplan.py" ready <plan>`. In the
   same message dispatch every newly ready task's agents, then make one
   `miniplan.py ledger` call recording the complete lines and a
   `T<n>: dispatched` line per new task. Keep sequential what the manual marked
@@ -126,7 +130,7 @@ Used for old-format manuals and wherever a scripted run is unavailable.
 ## Ledger
 
 Ledger lines go through
-`python3 -I ~/.codex/skills/miniplan-agents/bin/miniplan.py ledger <plan>`, which reads
+`python3 -I "<miniplan-agents>/bin/miniplan.py" ledger <plan>`, which reads
 lines from stdin, appends them to `## Progress`, and sets each task's arrow in
 `## 箭线图` to the matching glyph. Batch the lines of one step into one call.
 Never hand-edit the diagram glyphs; `miniplan.py diagram --write <plan>` rebuilds

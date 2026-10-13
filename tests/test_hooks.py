@@ -7,7 +7,7 @@ import unittest
 
 from _util import ROOT, fx, make_repo, run_cli
 
-PLUGIN = os.path.join(ROOT, 'plugin')
+PLUGIN = os.path.join(ROOT, 'claude')
 RUN_GUARD = os.path.join(PLUGIN, 'hooks', 'run-guard.sh')
 AGENT_GUARD = os.path.join(PLUGIN, 'hooks', 'agent-guard.sh')
 WORKFLOW_JS = '/home/u/.claude/plugins/miniplan/workflows/run-manual.js'
@@ -39,6 +39,7 @@ class HookCase(unittest.TestCase):
         e.pop('CLAUDE_CODE_SUBAGENT_MODEL_FORCE', None)
         e.pop('AGENT_GUARD_BUDGET', None)
         e.pop('CLAUDE_CODE_SESSION_ID', None)
+        e.pop('QWEN_CODE_SESSION_ID', None)
         e.update(TMPDIR=self.tmpdir, CLAUDE_PLUGIN_ROOT=PLUGIN)
         for k, v in extra.items():
             if v is None:
@@ -222,7 +223,7 @@ class AgentGuardTest(HookCase):
     def test_builder_denied_while_run_marker_exists(self):
         self.start_run()
         reason = self.denied(self.agent('miniplan:builder'))
-        self.assertIn('miniplan.py release', reason)
+        self.assertIn('/bin/miniplan.py" release', reason)
         self.assertIn(self.plan, reason)
 
     def test_other_roles_not_denied_while_run_marker_exists(self):
@@ -276,6 +277,68 @@ class ResetTest(HookCase):
     def test_task_notification_does_not_reset(self):
         self.reset('<task-notification>done</task-notification>')
         self.assertEqual(self.count(), 1)
+
+    def reset_submitted(self, payload):
+        payload = dict(payload, session_id=SESSION, prompt='继续')
+        r = subprocess.run(['bash', AGENT_GUARD, 'reset', '--require-submitted'], input=json.dumps(payload),
+                           env=self.env(), capture_output=True, text=True, encoding='utf-8')
+        self.assertEqual((r.returncode, r.stdout), (0, ''), r.stderr)
+
+    def test_require_submitted_skips_continuation(self):
+        self.reset_submitted({})
+        self.reset_submitted({'submitted_prompt': ''})
+        self.assertEqual(self.count(), 1)
+
+    def test_require_submitted_resets_on_submitted_prompt(self):
+        self.reset_submitted({'submitted_prompt': '继续'})
+        self.assertEqual(self.count(), 0)
+
+
+class SessionStartTest(unittest.TestCase):
+    """The injected agents skill must name real paths: hosts do not substitute text a hook prints."""
+
+    def context(self, hooks_json, env, substitute=None):
+        with open(hooks_json, encoding='utf-8') as f:
+            command = json.load(f)['hooks']['SessionStart'][0]['hooks'][0]['command']
+        if substitute:   # Claude Code replaces the token in the command text before running it
+            command = command.replace('${CLAUDE_PLUGIN_ROOT}', substitute)
+        r = subprocess.run(['bash', '-c', command], env=dict(os.environ, **env),
+                           capture_output=True, text=True, encoding='utf-8')
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return json.loads(r.stdout)['hookSpecificOutput']['additionalContext']
+
+    def test_claude_context_names_plugin_root(self):
+        text = self.context(os.path.join(PLUGIN, 'hooks', 'hooks.json'), {}, substitute=PLUGIN)
+        self.assertNotIn('CLAUDE_PLUGIN_ROOT}', text)
+        self.assertIn('bash "%s/hooks/agent-guard.sh" grant' % PLUGIN, text)
+
+    def test_qwen_context_reads_installed_extension(self):
+        home = tempfile.mkdtemp(prefix='qwen-home-')
+        self.addCleanup(shutil.rmtree, home, True)
+        os.makedirs(os.path.join(home, '.qwen', 'extensions'))
+        os.symlink(os.path.join(ROOT, 'qwen'), os.path.join(home, '.qwen', 'extensions', 'miniplan'))
+        text = self.context(os.path.join(ROOT, 'qwen', 'hooks', 'hooks.json'), {'HOME': home})
+        self.assertNotIn('CLAUDE_PLUGIN_ROOT}', text)
+        self.assertIn('bash "$HOME/.qwen/extensions/miniplan/hooks/agent-guard.sh" grant', text)
+        self.assertIn('## Routing (Qwen Code)', text)
+
+
+class GrantTest(HookCase):
+    def grant(self, *args, **env):
+        return subprocess.run(['bash', AGENT_GUARD, *args], env=self.env(**env),
+                              capture_output=True, text=True, encoding='utf-8')
+
+    def test_grant_uses_qwen_session_when_claude_absent(self):
+        r = self.grant('grant', '8', QWEN_CODE_SESSION_ID=SESSION)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        for _ in range(8):
+            self.assertEqual(self.agent('scout').stdout, '')
+        self.assertIn('budget reached', self.agent('scout').stdout)
+
+    def test_grant_without_session_fails(self):
+        r = self.grant('grant', '8', QWEN_CODE_SESSION_ID=None)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn('QWEN_CODE_SESSION_ID', r.stderr)
 
 
 if __name__ == '__main__':

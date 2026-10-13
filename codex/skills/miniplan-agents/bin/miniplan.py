@@ -22,7 +22,7 @@ COMMANDS = {
 def build_parser():
     ap = argparse.ArgumentParser(prog='miniplan.py', description='miniplan 手册工具')
     sub = ap.add_subparsers(dest='command', required=True, metavar='<子命令>')
-    session_default = os.environ.get('CLAUDE_CODE_SESSION_ID')
+    session_default = os.environ.get('CLAUDE_CODE_SESSION_ID') or os.environ.get('QWEN_CODE_SESSION_ID')
 
     def add(name, help_):
         return sub.add_parser(name, help=help_)

@@ -1,0 +1,12 @@
+{
+  "name": "miniplan-skills",
+  "description": "miniplan for Claude Code: clarify, plan, and run multi-agent work through fixed roles.",
+  "owner": { "name": "hertz" },
+  "plugins": [
+    {
+      "name": "miniplan",
+      "source": "./claude",
+      "description": "Entry point /miniplan <request>: brainstorming, plans, and working skills with routed agent roles and budget hooks."
+    }
+  ]
+}

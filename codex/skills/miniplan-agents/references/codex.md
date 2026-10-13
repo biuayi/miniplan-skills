@@ -35,8 +35,9 @@ with a generic spawn.
 
 ## Prompt mode budget: 5 Children per User Request
 
-The user-level `PreToolUse(Agent)` hook in `~/.codex/hooks.json` runs
-`~/.codex/hooks/agent-guard.sh` before every spawn. The guard keys its atomic
+The `PreToolUse(Agent)` hook runs `agent-guard.sh` before every spawn: from
+`~/.codex/hooks.json` for a script install, or from the plugin's
+`hooks/hooks.json` once it is trusted in `/hooks`. The guard keys its atomic
 counter by Codex `session_id` and `turn_id`, then denies unrouted roles,
 per-call model or effort overrides, and the sixth spawn in one user request.
 Do not work around a denial.
@@ -53,7 +54,7 @@ not refund a spawn.
 
 ## Scripted workflow execution
 
-`node ~/.codex/skills/miniplan-agents/scripts/codex-run.mjs <plan>` runs the
+`node <miniplan-agents>/scripts/codex-run.mjs <plan>` runs the
 shared scheduler through `codex exec`. The adapter loads each named role's
 TOML file into an ephemeral configuration profile, preserving its provider,
 model, effort, sandbox, and developer instructions. It does not set a default
