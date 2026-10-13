@@ -1,0 +1,60 @@
+{
+  "description": "miniplan: fixed-role routing and per-request subagent budget for the Agent tool; auto-loads miniplan:agents at session start",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.qwen/extensions/miniplan/hooks/agent-guard.sh\" check",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Workflow",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.qwen/extensions/miniplan/hooks/run-guard.sh\" workflow",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.qwen/extensions/miniplan/hooks/agent-guard.sh\" reset --require-submitted",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.qwen/extensions/miniplan/hooks/run-guard.sh\" stop",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -Rs --arg root \"$HOME/.qwen/extensions/miniplan\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"# miniplan:agents (auto-loaded at session start)\\n\\n\" + (split(\"${\" + \"CLAUDE_PLUGIN_ROOT}\") | join($root)))}}' \"$HOME/.qwen/extensions/miniplan/skills/agents/SKILL.md\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

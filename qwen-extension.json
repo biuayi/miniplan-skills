@@ -1,0 +1,5 @@
+{
+  "name": "miniplan",
+  "version": "0.3.0",
+  "description": "Entry point /miniplan <request>: clarify vague requests into an approved design, plan executable tasks, and run them through fixed agent roles with a per-request budget (miniplan:agents, brainstorming, plans, working)."
+}
