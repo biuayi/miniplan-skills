@@ -1,0 +1,19 @@
+{
+  "description": "miniplan: fixed-role routing and per-request subagent budget for the Agent tool; auto-loads miniplan:agents at session start",
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Agent", "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-guard.sh\" check", "timeout": 10 } ] },
+      { "matcher": "Workflow", "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-guard.sh\" workflow", "timeout": 20 } ] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-guard.sh\" reset", "timeout": 10 } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-guard.sh\" stop", "timeout": 20 } ] }
+    ],
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "jq -Rs '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"# miniplan:agents (auto-loaded at session start)\\n\\n\" + .)}}' \"${CLAUDE_PLUGIN_ROOT}/skills/agents/SKILL.md\"", "timeout": 10 } ]
+      }
+    ]
+  }
+}
