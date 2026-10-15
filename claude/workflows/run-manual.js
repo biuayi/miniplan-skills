@@ -181,6 +181,9 @@ function prefixRules(P, dir) {
     '命令前缀 P = `' + P + '`。',
     '- 子代理的 cd 不会在两次 Bash 调用之间保留，所以每条 Bash 命令都必须以 `P && ` 开头（P 里的 cd 目标是 ' + dir + '）。',
     '- Edit/Write 只能使用 ' + dir + '/ 下的绝对路径。',
+    ...(A.host === 'codex' ? [] : [
+      '- 测试、构建、类型检查、lint 必须经本机共用的测试槽位运行：`P && python3 -I ' + q(A.cli) + " test -- <命令>`；几条命令共用一个槽位时写 `test -- bash -c '<命令1> && <命令2>'`。槽位满时会排队，这类 Bash 调用的 timeout 设成 600000。",
+    ]),
   ]
 }
 

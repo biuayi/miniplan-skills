@@ -183,6 +183,8 @@ Claude Code 和 Qwen Code 上，working 在手册批准后调用 `workflows/run-
 
 运行期间有两个钩子把关：`run-guard.sh` 拦截不合规的 Workflow 调用，并在运行未完成时阻止停止；`agent-guard.sh` 拒绝手动派 builder。
 
+测试、构建、类型检查和 lint 经 `miniplan.py test -- <命令>` 运行，两种执行模式都一样：本机所有会话共用 2 个槽位，满了就排队；有 systemd 用户实例时，每次运行放进 `MemoryMax=4G` 的 scope，超限只杀这一次运行，不会触发整机 OOM。用环境变量 `MINIPLAN_TEST_SLOTS`、`MINIPLAN_TEST_MEM` 调整。Claude Code 上的 `test-gate.sh`（PreToolUse(Bash)）会拒绝带 `MINIPLAN_SLOT` 前缀、却没经过闸门的测试命令。
+
 Codex 通过官方 `codex exec` 适配器接入同一个调度器，不调用 Claude 的原生 `Workflow` 工具。它支持脚本自动派发、结构化结果和自动记账；只有运行器不可用时才退回提示词模式：
 
 ```bash

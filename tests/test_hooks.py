@@ -10,6 +10,7 @@ from _util import ROOT, fx, make_repo, run_cli
 PLUGIN = os.path.join(ROOT, 'claude')
 RUN_GUARD = os.path.join(PLUGIN, 'hooks', 'run-guard.sh')
 AGENT_GUARD = os.path.join(PLUGIN, 'hooks', 'agent-guard.sh')
+TEST_GATE = os.path.join(PLUGIN, 'hooks', 'test-gate.sh')
 WORKFLOW_JS = '/home/u/.claude/plugins/miniplan/workflows/run-manual.js'
 SESSION = 'sess-1'
 PLAN_REL = 'docs/miniplan/2026-01-01-good-plan.md'
@@ -278,6 +279,10 @@ class ResetTest(HookCase):
         self.reset('<task-notification>done</task-notification>')
         self.assertEqual(self.count(), 1)
 
+    def test_cross_session_message_does_not_reset(self):
+        self.reset('Another Claude session sent a message:\n<cross-session-message from="uds:/run/user/1000/cc-socks/1.sock">开工</cross-session-message>')
+        self.assertEqual(self.count(), 1)
+
     def reset_submitted(self, payload):
         payload = dict(payload, session_id=SESSION, prompt='继续')
         r = subprocess.run(['bash', AGENT_GUARD, 'reset', '--require-submitted'], input=json.dumps(payload),
@@ -292,6 +297,42 @@ class ResetTest(HookCase):
     def test_require_submitted_resets_on_submitted_prompt(self):
         self.reset_submitted({'submitted_prompt': '继续'})
         self.assertEqual(self.count(), 0)
+
+
+class TestGateHookTest(HookCase):
+    PREFIX = 'cd /w/wt && export MINIPLAN_SLOT=1 && export EIM_MOCK_WORKERS=2 && '
+
+    def decide(self, command):
+        r = self.hook(TEST_GATE, '', {'session_id': SESSION, 'tool_name': 'Bash', 'tool_input': {'command': command}})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        if not r.stdout:
+            return None
+        out = json.loads(r.stdout)['hookSpecificOutput']
+        self.assertEqual(out['permissionDecision'], 'deny')
+        return out['permissionDecisionReason']
+
+    def test_prefixed_test_run_denied(self):
+        for tail in ('npm run test:affected -- --files src/a.ts', 'npx vitest run tests/unit/', 'git status; npm run lint 2>&1 | tail',
+                     '(npm test > /tmp/x.log 2>&1 &)', 'cargo test -p core', 'go test ./...', 'npm run -s check:i18n',
+                     "bash -c 'npx vitest run'", 'sh -c "npm test"', './node_modules/.bin/vitest run', 'npm\ttest',
+                     'python3 -m unittest discover', 'node --test', 'pnpm build'):
+            reason = self.decide(self.PREFIX + tail)
+            self.assertIsNotNone(reason, tail)
+            self.assertIn(os.path.join(PLUGIN, 'bin', 'miniplan.py') + ' test --', reason)
+            self.assertIn('600000', reason)
+
+    def test_gated_test_run_passes(self):
+        self.assertIsNone(self.decide(self.PREFIX + 'python3 -I /x/bin/miniplan.py test -- npm run test:affected -- --files a'))
+        self.assertIsNone(self.decide(self.PREFIX + "python3 -I '/x y/bin/miniplan.py' test -- bash -c 'npm run lint && npx tsc -b'"))
+
+    def test_prefixed_light_command_passes(self):
+        for tail in ('git status --short', 'cat vitest.config.ts playwright.config.ts', 'npm ci --prefer-offline',
+                     'grep -n typescript package.json', 'cat node_modules/vitest/package.json', 'npm run dev', 'pnpm install',
+                     'npx prettier --check src'):
+            self.assertIsNone(self.decide(self.PREFIX + tail), tail)
+
+    def test_unprefixed_command_passes(self):
+        self.assertIsNone(self.decide('cd /w && npm run test:affected'))
 
 
 class SessionStartTest(unittest.TestCase):

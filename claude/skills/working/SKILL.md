@@ -186,6 +186,16 @@ Used for old-format manuals and wherever a scripted run is unavailable.
 
 ## Test selection and full suites
 
+<!-- host:claude-code -->
+- Every test, build, type-check, or lint command runs as
+  `python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" test -- <command>`: at
+  most 2 such runs at once on the machine across all sessions, each capped at
+  4 GB of memory, the rest queue. This holds for main's own runs too. Every
+  contract states it, with a Bash timeout of 600000 for these calls; several
+  commands share one slot as `test -- bash -c '<cmd1> && <cmd2>'`. A
+  PreToolUse hook denies a command carrying the `MINIPLAN_SLOT` prefix that
+  runs tests without it.
+<!-- /host -->
 - When the project provides a command that selects tests from the change set
   (for example `npm run test:affected`), builders and per-task gates run that
   command and nothing broader. Never rerun every test because one page changed.

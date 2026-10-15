@@ -2,6 +2,8 @@
 
 ## 未发布
 
+- 新增测试闸门 `miniplan.py test -- <命令>`：本机所有会话共用 2 个 flock 槽位，systemd-run 可用时每次运行放进 `MemoryMax=4G`、`MemorySwapMax=0` 的 scope（`--expand-environment=no`，命令里的 `$` 原样传入），不可用时只限并发；包装进程收到 SIGTERM/SIGHUP/SIGINT 会转给测试进程，被 SIGKILL 时测试随之结束；嵌套调用不再占槽位。Claude Code 的 builder、门禁与只读代理契约都写明这条规则，新钩子 `test-gate.sh`（PreToolUse(Bash)）拒绝带 `MINIPLAN_SLOT` 前缀却绕过闸门的测试、构建、类型检查与 lint 命令。此前 Workflow 模式的测试并发只限门禁，builder 的测试按任务槽位并行；提示词模式两者都不限，多个 builder 同时跑测试会把整机内存耗尽
+- `agent-guard.sh reset` 跳过跨会话消息（`<cross-session-message`），另一会话发来的消息不再清零派发计数
 - 按 agent 工具分目录：`plugin/` 改名为 `claude/`（唯一源），`codex/` 与新增的 `qwen/` 由 `build.sh` 从它生成
 - 新增 Qwen Code 扩展 `qwen/`：`qwen-extension.json`，角色用不带前缀的名字并继承主会话模型（只读角色禁写，builder 用 `approvalMode: auto-edit`），skill 路径固定为 `~/.qwen/extensions/miniplan`，workflow 用不带前缀的 `agentType` 并要求子代理经 `structured_output` 交回结果
 - 支持各工具原生市场从 GitHub 安装与更新：根目录 `.claude-plugin/marketplace.json`（Claude Code，→ `./claude`）、`.agents/plugins/marketplace.json`（Codex，→ `./codex`，新增 `codex/.codex-plugin/plugin.json`）；GitHub Action 把 `qwen/` 同步为 `qwen-extension` 分支根目录，Qwen 从该分支的归档地址或 SSH 地址加 `--ref` 安装

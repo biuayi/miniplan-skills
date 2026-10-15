@@ -3,7 +3,8 @@
   "hooks": {
     "PreToolUse": [
       { "matcher": "Agent", "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-guard.sh\" check", "timeout": 10 } ] },
-      { "matcher": "Workflow", "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-guard.sh\" workflow", "timeout": 20 } ] }
+      { "matcher": "Workflow", "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-guard.sh\" workflow", "timeout": 20 } ] },
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/test-gate.sh\"", "timeout": 10 } ] }
     ],
     "UserPromptSubmit": [
       { "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-guard.sh\" reset", "timeout": 10 } ] }
