@@ -4,7 +4,7 @@
 
 **把范围大、目标模糊的需求，先问清楚，再设计、反证、规划、派发、验收。**
 
-一套 skill，三个宿主：Claude Code · Codex · Qwen Code　｜　v0.3.0　｜　[CHANGELOG](CHANGELOG.md)
+v0.3.0　｜　[CHANGELOG](CHANGELOG.md)
 
 </div>
 
@@ -100,7 +100,7 @@ cd ~/Project/miniplan-skills
 
 ![任务调度](docs/images/scheduling.svg)
 
-plans 把设计稿拆成任务，每个任务写明依赖、可写范围（OWNS）、可执行的 CHECK 和派给哪个角色。working 照着这张图调度：哪个任务的依赖满足了就派哪个，可写范围不重叠的任务并行，每个 builder 在自己的 git worktree 里改，过了门禁再一个个合并回集成分支。Claude Code 和 Qwen Code 用原生 Workflow 脚本调度，Codex 通过 `codex exec` 接入同一个调度器。
+plans 把设计稿拆成任务，每个任务写明依赖、可写范围（OWNS）、可执行的 CHECK 和派给哪个角色。working 照着这张图调度：哪个任务的依赖满足了就派哪个，可写范围不重叠的任务并行，每个 builder 在自己的 git worktree 里改，过了门禁再一个个合并回集成分支。
 
 ## 更多文档
 
