@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 478" width="880" height="478" role="img" aria-label="需求分流：范围和验收都清楚就直接做，否则按调研、单模块、跨模块分成 Spike、Bounded、Architectural 三条路径，只升级不降级">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;font-size:13.5px}
+.b{font-weight:600}
+.card{fill:#fff;stroke:#d0d7de}.ol{fill:none;stroke:#d0d7de}
+.fg{fill:#1f2328}.mu{fill:#59636e}.lb{fill:#59636e;font-size:12px}
+.ln{stroke:#8c959f;stroke-width:1.5;fill:none}.ar{fill:#8c959f}
+.h0{fill:#f6f8fa}.t0{fill:#59636e}
+.h1{fill:#ddf4ff}.t1{fill:#0969da}
+.h2{fill:#fbefff}.t2{fill:#8250df}
+.h3{fill:#ffeff7}.t3{fill:#bf3989}
+.gate{fill:#fff1e5;stroke:#fb8f44}.tg{fill:#bc4c00}
+@media (prefers-color-scheme:dark){
+.card{fill:#151b23;stroke:#3d444d}.ol{stroke:#3d444d}
+.fg{fill:#f0f6fc}.mu,.lb{fill:#9198a1}
+.ln{stroke:#656c76}.ar{fill:#656c76}
+.h0{fill:#212830}.t0{fill:#9198a1}
+.h1{fill:#0c2d6b}.t1{fill:#4493f8}
+.h2{fill:#2a1758}.t2{fill:#ab7df8}
+.h3{fill:#3d1430}.t3{fill:#f778ba}
+.gate{fill:#2e1a0a;stroke:#bd561d}.tg{fill:#f0883e}
+}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ar" d="M0 0L10 5L0 10z"/></marker></defs>
+
+<!-- 入口与判断 -->
+<rect class="card" x="370" y="10" width="140" height="32" rx="16"/>
+<text class="fg b" x="440" y="31" text-anchor="middle">收到需求</text>
+<line class="ln" x1="440" y1="42" x2="440" y2="64" marker-end="url(#a)"/>
+<polygon class="card" points="270,90 292,66 588,66 610,90 588,114 292,114"/>
+<text class="fg b" x="440" y="95" text-anchor="middle">范围和验收都清楚，只改一处？</text>
+
+<!-- 是 -->
+<polyline class="ln" points="270,90 119,90 119,166" marker-end="url(#a)"/>
+<rect class="card" x="176" y="79" width="40" height="22" rx="11"/>
+<text class="fg b" x="196" y="95" text-anchor="middle" style="font-size:12.5px">是</text>
+
+<!-- 否 -->
+<line class="ln" x1="440" y1="114" x2="440" y2="140"/>
+<line class="ln" x1="333" y1="140" x2="761" y2="140"/>
+<line class="ln" x1="333" y1="140" x2="333" y2="166" marker-end="url(#a)"/>
+<line class="ln" x1="547" y1="140" x2="547" y2="166" marker-end="url(#a)"/>
+<line class="ln" x1="761" y1="140" x2="761" y2="166" marker-end="url(#a)"/>
+<rect class="card" x="366" y="129" width="40" height="22" rx="11"/>
+<text class="fg b" x="386" y="145" text-anchor="middle" style="font-size:12.5px">否</text>
+
+<!-- 直接做 -->
+<rect class="card" x="20" y="168" width="198" height="250" rx="12"/>
+<path class="h0" d="M20 224V180Q20 168 32 168H206Q218 168 218 180V224Z"/>
+<rect class="ol" x="20" y="168" width="198" height="250" rx="12"/>
+<text class="t0 b" x="36" y="192" style="font-size:16px">直接做</text>
+<text class="mu" x="36" y="212" style="font-size:12.5px">不进流水线</text>
+<text class="lb" x="36" y="250">信号</text><text class="fg" x="36" y="269">范围、验收都清楚</text>
+<text class="lb" x="36" y="294">提问</text><text class="fg" x="36" y="313">不问</text>
+<text class="lb" x="36" y="338">产出</text><text class="fg" x="36" y="357">直接改，照常验证</text>
+<text class="lb" x="36" y="382">反证</text><text class="fg" x="36" y="401">不需要</text>
+
+<!-- Spike -->
+<rect class="card" x="234" y="168" width="198" height="250" rx="12"/>
+<path class="h1" d="M234 224V180Q234 168 246 168H420Q432 168 432 180V224Z"/>
+<rect class="ol" x="234" y="168" width="198" height="250" rx="12"/>
+<text class="t1 b" x="250" y="192" style="font-size:16px">Spike</text>
+<text class="mu" x="250" y="212" style="font-size:12.5px">调研 · 盘点 · 可行性</text>
+<text class="lb" x="250" y="250">信号</text><text class="fg" x="250" y="269">整理、盘点、有哪些能力</text>
+<text class="lb" x="250" y="294">提问</text><text class="fg" x="250" y="313">1 个：受众和粒度</text>
+<text class="lb" x="250" y="338">产出</text><text class="fg" x="250" y="357">scout 分头读，出报告</text>
+<text class="lb" x="250" y="382">之后</text><text class="fg" x="250" y="401">变成要做的事再分流</text>
+
+<!-- Bounded -->
+<rect class="card" x="448" y="168" width="198" height="250" rx="12"/>
+<path class="h2" d="M448 224V180Q448 168 460 168H634Q646 168 646 180V224Z"/>
+<rect class="ol" x="448" y="168" width="198" height="250" rx="12"/>
+<text class="t2 b" x="464" y="192" style="font-size:16px">Bounded</text>
+<text class="mu" x="464" y="212" style="font-size:12.5px">单个模块</text>
+<text class="lb" x="464" y="250">信号</text><text class="fg" x="464" y="269">一个模块，验收模糊</text>
+<text class="lb" x="464" y="294">提问</text><text class="fg" x="464" y="313">最多 3 个</text>
+<text class="lb" x="464" y="338">产出</text><text class="fg" x="464" y="357">短设计稿，你批准</text>
+<text class="lb" x="464" y="382">反证</text><text class="fg" x="464" y="401">有风险时才做</text>
+
+<!-- Architectural -->
+<rect class="card" x="662" y="168" width="198" height="250" rx="12"/>
+<path class="h3" d="M662 224V180Q662 168 674 168H848Q860 168 860 180V224Z"/>
+<rect class="ol" x="662" y="168" width="198" height="250" rx="12"/>
+<text class="t3 b" x="678" y="192" style="font-size:16px">Architectural</text>
+<text class="mu" x="678" y="212" style="font-size:12.5px">跨模块 · 新接口 · 整体</text>
+<text class="lb" x="678" y="250">信号</text><text class="fg" x="678" y="269">多个模块或新接口</text>
+<text class="lb" x="678" y="294">提问</text><text class="fg" x="678" y="313">最多 6 个，分 3 轮内</text>
+<text class="lb" x="678" y="338">产出</text><text class="fg" x="678" y="357">完整设计稿，你批准</text>
+<text class="lb" x="678" y="382">反证</text><text class="fg" x="678" y="401">必须，交给 critic</text>
+
+<!-- 只升级不降级 -->
+<line class="ln" x1="333" y1="452" x2="852" y2="452" marker-end="url(#a)"/>
+<rect class="gate" x="358" y="439" width="470" height="26" rx="13"/>
+<text class="tg b" x="593" y="457" text-anchor="middle" style="font-size:12.5px">只升级不降级：Bounded 做着发现第二个子系统，就升为 Architectural</text>
+</svg>

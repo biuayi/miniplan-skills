@@ -1,252 +1,110 @@
+<div align="center">
+
 # miniplan
 
-把范围大、目的不明确的需求，先问清楚，再设计、反证、规划、派发、验收。同一套 skill 按 agent 工具分别打包：Claude Code、Codex、Qwen Code。当前版本 v0.3.0，见 [CHANGELOG.md](CHANGELOG.md)。
+**把范围大、目标模糊的需求，先问清楚，再设计、反证、规划、派发、验收。**
 
-```
-/miniplan <需求>        Claude Code、Qwen Code
-$miniplan <需求>        Codex
-      │
-      ▼
-brainstorming  分级（Spike / Bounded / Architectural）→ 先读代码再提问，一次一个决策 → 设计稿 → critic 反证 → 你批准
-      ▼
-plans          设计稿 → 任务手册：任务、前置、REALIZES 验收项、可执行 CHECK、每个子代理的 prompt、轮次预算 → 你批准
-      ▼
-working        按手册派发（scout / builder / verifier ...）→ 门禁验收 → 一轮修复 → 记账 → 轮末汇报
-```
+一套 skill，三个宿主：Claude Code · Codex · Qwen Code　｜　v0.3.0　｜　[CHANGELOG](CHANGELOG.md)
 
-不带参数的 `/miniplan` 会读当前目录 `docs/miniplan/` 里的设计稿和手册状态，接着未完成的阶段继续。
+</div>
 
-## 目录
+![miniplan 流水线](docs/images/pipeline.svg)
 
-```
-claude/     Claude Code 插件（唯一源）：skills/ agents/ hooks/ bin/ workflows/ .claude-plugin/
-codex/      Codex 版，由 build.sh 从 claude/ 生成 skills/；同时是 Codex 插件根目录（.codex-plugin/）
-qwen/       Qwen Code 扩展，由 build.sh 从 claude/ 整体生成（qwen-extension.json）
-.claude-plugin/marketplace.json    Claude Code 市场清单 → ./claude
-.agents/plugins/marketplace.json   Codex 市场清单 → ./codex
-.github/workflows/qwen-extension.yml  把 qwen/ 同步为 qwen-extension 分支的根目录，供 Qwen 原生安装
-install.sh  从本地 clone 安装：claude | codex | qwen | all
-build.sh    改过 claude/ 之后重新生成 codex/ 与 qwen/，并打包到 dist/
-tests/      CLI、钩子与调度测试（不进任何包），bash tests/run.sh
-```
+## 安装
 
-## 安装与更新
+需要 `bash`、`jq`、Python 3.11+；Codex 的脚本调度另需 Node.js 18+。Windows 原生请在 Git Bash 里用，并确保 `jq` 在 PATH 里。
 
-每个工具都有两种方式，**二选一**，同时用会让同名 skill 和钩子加载两次：
-
-- **原生市场**：工具自己从 GitHub 拉取，用工具自己的命令更新。适合只用不改的人。
-- **clone + install.sh**：从本地 clone 安装，`git pull` 后更新。适合要改 skill 的人。
-
-公共依赖：`jq`、`bash`（钩子脚本）、Python 3.11+；Codex 的脚本调度另需 Node.js 18+。钩子脚本在 Linux、macOS、WSL 下直接可用；Windows 原生需要 Git Bash，并确保 `jq` 在 PATH 里。
+> [!IMPORTANT]
+> 每个工具只选一种装法：**原生市场**（只用不改）或 **clone + `install.sh`**（要改 skill）。两种都装，skill 和钩子会加载两次。装完或更新后要开新会话。
 
 ### Claude Code
-
-原生市场：
 
 ```bash
 claude plugin marketplace add biuayi/miniplan-skills
 claude plugin install miniplan@miniplan-skills
 ```
 
-在会话里也可以用 `/plugin marketplace add biuayi/miniplan-skills` 和 `/plugin install miniplan@miniplan-skills`。2.1.275 及以上版本还能一步完成：`/plugin install miniplan --marketplace biuayi/miniplan-skills`。
-
-更新：
-
-```bash
-claude plugin marketplace update miniplan-skills
-claude plugin update miniplan@miniplan-skills     # 之后重启会话或 /reload-plugins
-```
-
-也可以开自动更新：在 `/plugin` → Marketplaces → miniplan-skills 里选 Enable auto-update。第三方市场默认是关闭的。
-
-clone + install.sh：
-
-```bash
-git clone https://github.com/biuayi/miniplan-skills.git ~/Project/miniplan-skills
-cd ~/Project/miniplan-skills && ./install.sh claude
-```
-
-脚本会把这个 clone 注册成名为 `miniplan-skills` 的本地市场，再从 `claude/` 安装插件。插件直接从 clone 目录加载，所以更新只需要 `git pull`，然后开新会话或 `/reload-plugins`。
-
-验证：`claude plugin details miniplan`，应列出 5 个 skill、8 个 agent 和 hooks。
-
-注意：
-
-- 两种方式的市场都叫 `miniplan-skills`。换方式前先执行 `claude plugin uninstall miniplan@miniplan-skills && claude plugin marketplace remove miniplan-skills`。
-- 旧版 install.sh 装在 `~/.claude/skills/miniplan` 的副本，新的 `install.sh claude` 会把它移到 `~/.claude/plugin-backups/`；走原生市场的话请手动删掉它。它不会再被 Claude 加载，但 Codex 也会扫描 `~/.claude/skills`，留着它会在 Codex 里多出一套 skill。
-- `~/.claude/agents/` 里的同名角色文件会遮蔽插件里的同名角色；`settings.json` 里如果还登记着旧的 agent-guard 钩子，派发会被计数两次。install.sh 遇到这两种情况会提醒。
+验证：`claude plugin details miniplan` 应列出 5 个 skill、8 个 agent 和 hooks。
+更新：`claude plugin marketplace update miniplan-skills && claude plugin update miniplan@miniplan-skills`
 
 ### Codex
-
-原生市场：
 
 ```bash
 codex plugin marketplace add biuayi/miniplan-skills
 codex plugin add miniplan@miniplan-skills
 ```
 
-插件只能带 skill 和钩子，还有三件事要手动做一次：
-
-```bash
-P=$(ls -d ~/.codex/plugins/cache/miniplan-skills/miniplan/* | sort -V | tail -1); [ -n "$P" ] || echo "插件没有装上"
-mkdir -p ~/.codex/agents && cp -n "$P"/agents/*.toml ~/.codex/agents/   # 8 个角色，不覆盖已有的
-grep -q 'miniplan-agents' ~/.codex/AGENTS.md 2>/dev/null || cat "$P/AGENTS.md" >> ~/.codex/AGENTS.md
-```
-
-1. 按自己的 `config.toml` 修改 `~/.codex/agents/*.toml` 里的 `model_provider = "llm"` 和模型名。
-2. 在 Codex 里打开 `/hooks`，信任 miniplan 的钩子。插件钩子默认不生效，钩子内容变了要重新信任。
-3. 在 `config.toml` 加上：
-
-   ```toml
-   [agents]
-   enabled = true
-   max_concurrent_threads_per_session = 3
-   ```
-
-插件模式下，skill 名字带插件前缀：`miniplan:miniplan`、`miniplan:miniplan-agents` 等。输入 `$` 后从列表里选即可。
-
-更新：`codex plugin marketplace upgrade miniplan-skills`。它会刷新市场快照，已安装插件的版本号有变化时会自动换成新版。
-
-clone + install.sh：
-
-```bash
-git clone https://github.com/biuayi/miniplan-skills.git ~/Project/miniplan-skills
-cd ~/Project/miniplan-skills && ./install.sh codex
-```
-
-文件装到 `$CODEX_HOME`（默认 `~/.codex`）下的这些位置：`skills/` 里的 5 个 skill，`agents/` 里的角色文件，`hooks/agent-guard.sh` 和 `hooks.json`，以及 `AGENTS.md`。
-
-- 已有的角色 toml 不会被覆盖，因为它们带着你自己的 provider 和模型。
-- 已有的 `hooks.json` 和 `AGENTS.md` 会保留，需要合并时脚本会提示。
-- 首次运行 Codex 会要求信任新的 hook。
-
-更新：`git pull && ./install.sh codex`。
-
-Codex 侧与 Claude 的差异：
-
-- 没有 AskUserQuestion，追问用纯文本，一次一问。
-- 没有每会话的预算放宽，需要时在启动前设置 `export CODEX_AGENT_GUARD_BUDGET=<N>`。
-- 派发时用不带前缀的角色名：`agent_type = "scout"`。
+Codex 插件只能带 skill 和钩子，角色文件、`AGENTS.md`、钩子信任和 `config.toml` 要手动处理一次，步骤见 [docs/install.md](docs/install.md#codex)。
+更新：`codex plugin marketplace upgrade miniplan-skills`
 
 ### Qwen Code
 
-Qwen 只认仓库根目录的扩展清单，所以由 GitHub Action 把 `qwen/` 同步成 `qwen-extension` 分支的根目录。安装时要指向这个分支，有两种写法，任选其一：
-
 ```bash
-# HTTPS 归档，不需要 GitHub 账号；版本号变化时才会更新
 qwen extensions install https://github.com/biuayi/miniplan-skills/archive/refs/heads/qwen-extension.tar.gz
-
-# SSH 加分支，需要配好 GitHub SSH 密钥；跟随分支的每次提交更新
-qwen extensions install git@github.com:biuayi/miniplan-skills.git --ref qwen-extension
 ```
 
-不要用 `https://github.com/biuayi/miniplan-skills --ref qwen-extension`。对 HTTPS 的 GitHub 仓库地址，Qwen 会忽略 `--ref`，先读默认分支的 `.claude-plugin/marketplace.json`，然后把 Claude 版转换后装上，这样装出来的角色和钩子在 Qwen 上不能正常工作。
+> [!CAUTION]
+> 不要写成 `https://github.com/biuayi/miniplan-skills --ref qwen-extension`。对 HTTPS 仓库地址 Qwen 会忽略 `--ref`，装成转换后的 Claude 版，角色和钩子不能正常工作。
 
-加 `--auto-update` 会自动跟进更新；加 `--consent` 可以跳过确认。
+更新：`qwen extensions update miniplan`
 
-更新：`qwen extensions update miniplan`。
-
-clone + install.sh：
+<details>
+<summary><b>从本地 clone 安装（要改 skill 时用）</b></summary>
 
 ```bash
 git clone https://github.com/biuayi/miniplan-skills.git ~/Project/miniplan-skills
-cd ~/Project/miniplan-skills && ./install.sh qwen
+cd ~/Project/miniplan-skills
+./install.sh claude     # 或 codex、qwen、all
 ```
 
-脚本会从 `qwen/` 安装扩展；已经装过时，先卸载再重装。原因是 `qwen extensions update` 对本地来源只看版本号，版本号没变就不会更新。如果之前是用 git 方式装的，脚本会跳过；要改用 clone，先执行 `qwen extensions uninstall miniplan`。
+更新：Claude Code 只需 `git pull`，然后开新会话；Codex 和 Qwen Code 要 `git pull && ./install.sh <工具>`。
 
-更新：`git pull && ./install.sh qwen`。
+</details>
 
-Qwen 侧的差异：
-
-- 角色按不带前缀的名字派发，都继承主会话模型。要给某个角色指定模型，把 `~/.qwen/extensions/miniplan/agents/<role>.md` 复制到 `~/.qwen/agents/` 再加 `model:`。用户级同名角色会遮蔽扩展里的。
-- workflow 模式需要在 `~/.qwen/settings.json` 打开 `"tools": {"workflowsEnabled": true}`。
+换装法、旧版残留、Codex 模型配置、Qwen 角色模型等注意事项见 [docs/install.md](docs/install.md)。
 
 ## 用法
 
-| 场景 | 命令 |
-| --- | --- |
-| 新需求 | `/miniplan 把 X 整体梳理一下`（Codex 用 `$miniplan`） |
-| 续跑 | `/miniplan`（读 `docs/miniplan/` 状态） |
-| 调研、盘点 | `/miniplan 整理一下 X 有哪些能力`（Spike：问一句受众与粒度，scout 分头读，出报告） |
-| 手册需要每轮超过 5 个子代理 | 批准手册时同意放宽，working 会执行 `agent-guard.sh grant <N>`，结束时 `revoke` |
+| 场景 | Claude Code / Qwen Code | Codex |
+| --- | --- | --- |
+| 新需求 | `/miniplan 把 X 整体梳理一下` | `$miniplan 把 X 整体梳理一下` |
+| 续跑上次没做完的 | `/miniplan` | `$miniplan` |
+| 调研、盘点 | `/miniplan 整理一下 X 有哪些能力` | `$miniplan 整理一下 X 有哪些能力` |
 
-角色与预算规则在 `claude/skills/agents/SKILL.md`；在 Claude Code 和 Qwen Code 上会话启动时自动注入，在 Codex 上通过 `$miniplan-agents` 加载。
+设计稿、任务手册和进度账本都写在当前项目的 `docs/miniplan/` 下。
 
-## Workflow 模式与 miniplan.py
+## 分流与路由
 
-Claude Code 和 Qwen Code 上，working 在手册批准后调用 `workflows/run-manual.js`：
+主会话只负责拆任务、做决策、和你对话、整合结果；读代码、跑命令、写代码、验收都交给职责单一的子代理。什么时候问你、什么时候派人、派谁、用什么模型，都由固定规则决定，不靠临场发挥。
 
-- 依赖就绪即派发；每个 builder 在独立的 git worktree 里并行工作。
-- 过了门禁的任务，由脚本串行合并回手册的集成分支。
-- 主线程只在运行结束、需要用户操作或失败时介入。
+### 需求分流：先判断需求有多大
 
-运行期间有两个钩子把关：`run-guard.sh` 拦截不合规的 Workflow 调用，并在运行未完成时阻止停止；`agent-guard.sh` 拒绝手动派 builder。
+![需求分流](docs/images/triage.svg)
 
-测试、构建、类型检查和 lint 经 `miniplan.py test -- <命令>` 运行，两种执行模式都一样：本机所有会话共用 2 个槽位，满了就排队；有 systemd 用户实例时，每次运行放进 `MemoryMax=4G` 的 scope，超限只杀这一次运行，不会触发整机 OOM。用环境变量 `MINIPLAN_TEST_SLOTS`、`MINIPLAN_TEST_MEM` 调整。Claude Code 上的 `test-gate.sh`（PreToolUse(Bash)）会拒绝带 `MINIPLAN_SLOT` 前缀、却没经过闸门的测试命令。
+- **先读再问**：scout 能从代码里查到的，不拿来问你。
+- **一个问题一个决策**：每次最多问两个问题，每个问题 2 到 4 个选项，推荐项排第一并写明理由。答案记进设计稿的 Decisions。
+- **反证**：critic 专门给设计稿挑错，每条意见都要引用证据。主会话逐条裁决：采纳、驳回，或者变成新问题交给你。
+- **两道闸门**：设计稿和任务手册都要你明确批准，沉默不算批准。
 
-Codex 通过官方 `codex exec` 适配器接入同一个调度器，不调用 Claude 的原生 `Workflow` 工具。它支持脚本自动派发、结构化结果和自动记账；只有运行器不可用时才退回提示词模式：
+### 角色路由：派发时选角色，模型跟着角色走
 
-```bash
-node <miniplan-agents>/scripts/codex-run.mjs /absolute/path/to/plan.md --dry-run
-node <miniplan-agents>/scripts/codex-run.mjs /absolute/path/to/plan.md
-```
+![角色路由](docs/images/routing.svg)
 
-`<miniplan-agents>` 是 `miniplan-agents` skill 的目录：脚本安装时为 `~/.codex/skills/miniplan-agents`，插件安装时为 `~/.codex/plugins/cache/miniplan-skills/miniplan/<版本>/skills/miniplan-agents`。运行需要 Node.js 18+、Python 3.11+，以及支持独立 profile、JSON 事件和输出 schema 的 Codex CLI。
+- **只在值得时派发**：有两条以上能并行的只读线、原始输出会塞满主会话上下文、需要独立门禁，或者你明确要求时才派子代理；否则主会话自己做。
+- **按职责分档**：读和跑用便宜、快的模型，写和审用中档，最强的模型只用来仲裁，而且要你点名。
+- **升级换角色，不换模型**：需要更严的把关就换 critic 或 judge，不给同一个角色换更贵的模型。
+- **实现和验收分开**：builder 自己跑的测试不算验收。verifier 拿手册里的 CHECK 原文独立去跑；不通过修一轮，还不通过交给你。
+- **预算**：对话里派发时，每个用户请求最多 5 个子代理，由钩子计数；按任务手册跑时，上限是你批准手册时同意的预算。
 
-角色与资源：
+### 任务调度：手册是一张依赖图
 
-- 每个进程从 `~/.codex/agents/<role>.toml` 读取角色配置。模型、provider、推理强度和 sandbox 都由角色文件决定。
-- 临时 profile 在进程退出后清理，不修改主会话的模型。
-- 宿主脚本负责创建工作树、检查改动范围、提交和合并。角色保留各自的沙箱，只修改文件，或提供独立的门禁证据。
+![任务调度](docs/images/scheduling.svg)
 
-调度与预算：
+plans 把设计稿拆成任务，每个任务写明依赖、可写范围（OWNS）、可执行的 CHECK 和派给哪个角色。working 照着这张图调度：哪个任务的依赖满足了就派哪个，可写范围不重叠的任务并行，每个 builder 在自己的 git worktree 里改，过了门禁再一个个合并回集成分支。Claude Code 和 Qwen Code 用原生 Workflow 脚本调度，Codex 通过 `codex exec` 接入同一个调度器。
 
-- 按手册的 `并发`（默认 6 个任务槽位）、`测试并发`（默认 3 个 verifier）和整份手册的 `预算` 执行。任务槽位不是角色进程总数的上限。
-- 交互模式下 Agent 的线程限制、每请求预算和 `CODEX_AGENT_GUARD_BUDGET` 都不约束脚本。
-- 累计派发数持久化在 Git 元数据里，恢复运行或换一次请求都不会清零；用完后要提高手册里已批准的预算。
+## 更多文档
 
-结果与退出码：
-
-- 结果、JSONL 事件和 stderr 默认保留在仓库的 Git 元数据目录，脚本会把进度写回账本。
-- 有任务未验证、失败或需要主线程处理时，返回非零退出码。
-
-官方接口依据：[非交互模式](https://developers.openai.com/codex/noninteractive/)、[SDK](https://developers.openai.com/codex/sdk/)、[配置 profile](https://developers.openai.com/codex/config-advanced/)。完整的运行与恢复说明见 [Codex workflow](claude/skills/working/references/codex-workflow.md)；设计依据、真实测量和已知边界见 [实现核验](docs/codex-workflow.md)。
-
-手册的解析、自检和记账由 CLI 完成。下面的 `<miniplan>` 指插件根目录：clone 安装是 `<clone>/claude`，Claude 市场安装是 `~/.claude/plugins/cache/miniplan-skills/miniplan/<版本>`，Qwen 是 `~/.qwen/extensions/miniplan`；Codex 用 `<miniplan-agents>`。
-
-```bash
-python3 -I <miniplan>/bin/miniplan.py lint <plan>           # 手册自检
-python3 -I <miniplan>/bin/miniplan.py diagram --write <plan> # 由 DEPENDS 生成箭线图
-python3 -I <miniplan>/bin/miniplan.py ready <plan>          # 当前就绪任务
-python3 -I <miniplan>/bin/miniplan.py check <plan>          # 门禁检查
-```
-
-其余子命令：`args` `prompt` `merge-check` `ledger` `release` `trace`。
-
-## 维护
-
-只改 `claude/` 下的文件，然后：
-
-```bash
-./build.sh          # 重新生成 codex/skills、codex/.codex-plugin 与 qwen/，跑一致性检查，打包 dist/miniplan-v<版本>.zip
-bash tests/run.sh   # 测试
-./install.sh all    # 本机更新（claude、qwen 只在装有对应 CLI 时安装）
-```
-
-- 生成的 `codex/` 与 `qwen/` 也要一起提交，原生市场直接从仓库读取它们。
-- `codex/agents/`、`codex/hooks/`、`codex/AGENTS.md` 是手写文件，不由 build 生成。
-- `claude/skills/*/SKILL.md` 里用 `<!-- host:claude-code -->` 和 `<!-- host:codex ... -->` 标记的段落只进对应一侧；Qwen 保留 Claude 侧的段落。
-- skill 正文里引用插件文件时写 `${CLAUDE_PLUGIN_ROOT}/...`。build 会把它改写为 Codex 的 `<miniplan-agents>/...` 和 Qwen 的 `~/.qwen/extensions/miniplan/...`。`references/` 下的文件不会做变量替换，里面不要写安装路径。
-
-发布：
-
-1. 修改 `claude/.claude-plugin/plugin.json` 里的 `version`。Claude、Codex 的原生更新和 Qwen 的归档安装都按版本号判断，版本号不变，用户就收不到更新。
-2. `./build.sh`，提交后推送到 `main`。
-3. 推送后，`qwen-extension` 分支由 Action 自动同步；第一次可以在 Actions 页面手动运行 qwen-extension。
-
-## 已知限制
-
-- agent 定义只在会话启动时加载，装完或更新后要开新会话。
-- Claude Code 上 `subagent_type` 只接受 `miniplan:<role>` 形式；Qwen Code 和 Codex 用不带前缀的角色名。skill 文本已按各自的形式生成。
-- 提示词模式没有 git worktree 隔离，builder 在当前分支上工作；workflow 模式的 builder 在独立 worktree 里工作，合并回集成分支由脚本完成。push 到共享分支仍属于需要你批准的外部副作用。
+- [docs/install.md](docs/install.md)：两种装法的完整步骤，各工具的差异和注意事项
+- [docs/workflow.md](docs/workflow.md)：预算放宽、Workflow 模式、测试闸门、Codex 脚本调度、`miniplan.py` 命令
+- [docs/maintaining.md](docs/maintaining.md)：目录结构、构建、测试、发布、已知限制
+- [docs/codex-workflow.md](docs/codex-workflow.md)：Codex 调度的实现核验

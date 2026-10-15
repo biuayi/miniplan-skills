@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 320" width="880" height="320" role="img" aria-label="miniplan 流水线：brainstorming、plans、working 三个阶段，阶段之间各有一道需要你批准的闸门">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;font-size:13.5px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.b{font-weight:600}
+.card{fill:#fff;stroke:#d0d7de}
+.fg{fill:#1f2328}.mu{fill:#59636e}.note{fill:#7d8590;font-size:12.5px}
+.ln{stroke:#8c959f;stroke-width:1.5;fill:none}.ar{fill:#8c959f}
+.dv{stroke:#d8dee4}
+.s1{fill:#0969da}.t1{fill:#0969da}
+.s2{fill:#8250df}.t2{fill:#8250df}
+.s3{fill:#1a7f37}.t3{fill:#1a7f37}
+.gate{fill:#fff1e5;stroke:#fb8f44}.tg{fill:#bc4c00}
+.done{fill:#dafbe1;stroke:#4ac26b}
+.w{fill:#fff}
+@media (prefers-color-scheme:dark){
+.card{fill:#151b23;stroke:#3d444d}
+.fg{fill:#f0f6fc}.mu{fill:#9198a1}
+.ln{stroke:#656c76}.ar{fill:#656c76}
+.dv{stroke:#2f353d}
+.s1{fill:#1f6feb}.t1{fill:#4493f8}
+.s2{fill:#8957e5}.t2{fill:#ab7df8}
+.s3{fill:#238636}.t3{fill:#3fb950}
+.gate{fill:#2e1a0a;stroke:#bd561d}.tg{fill:#f0883e}
+.done{fill:#0f2d1a;stroke:#238636}
+}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ar" d="M0 0L10 5L0 10z"/></marker></defs>
+
+<!-- 入口 -->
+<rect class="card" x="20" y="14" width="200" height="34" rx="17"/>
+<text class="fg mono" x="120" y="36" text-anchor="middle">/miniplan &lt;需求&gt;</text>
+<text class="note" x="236" y="36">不带参数时，读项目里的 docs/miniplan/，接着上次没走完的阶段</text>
+<line class="ln" x1="120" y1="48" x2="120" y2="70" marker-end="url(#a)"/>
+
+<!-- brainstorming -->
+<rect class="card" x="20" y="72" width="230" height="176" rx="12"/>
+<circle class="s1" cx="46" cy="102" r="14"/><text class="w b" x="46" y="107" text-anchor="middle">1</text>
+<text class="t1 b" x="70" y="99" style="font-size:16px">brainstorming</text>
+<text class="mu" x="70" y="118" style="font-size:12.5px">问清楚 · 设计 · 反证</text>
+<line class="dv" x1="36" y1="134" x2="234" y2="134"/>
+<circle class="s1" cx="42" cy="154" r="3"/><text class="fg" x="54" y="159">先分流，看需求有多大</text>
+<circle class="s1" cx="42" cy="178" r="3"/><text class="fg" x="54" y="183">先读代码，再提问</text>
+<circle class="s1" cx="42" cy="202" r="3"/><text class="fg" x="54" y="207">一次只问一个决策</text>
+<circle class="s1" cx="42" cy="226" r="3"/><text class="fg" x="54" y="231">设计稿交给 critic 反证</text>
+
+<!-- 闸门 1 -->
+<rect class="gate" x="256" y="130" width="63" height="24" rx="12"/>
+<text class="tg b" x="287.5" y="147" text-anchor="middle" style="font-size:12.5px">你批准</text>
+<line class="ln" x1="252" y1="168" x2="322" y2="168" marker-end="url(#a)"/>
+
+<!-- plans -->
+<rect class="card" x="325" y="72" width="230" height="176" rx="12"/>
+<circle class="s2" cx="351" cy="102" r="14"/><text class="w b" x="351" y="107" text-anchor="middle">2</text>
+<text class="t2 b" x="375" y="99" style="font-size:16px">plans</text>
+<text class="mu" x="375" y="118" style="font-size:12.5px">拆任务 · 定验收 · 配角色</text>
+<line class="dv" x1="341" y1="134" x2="539" y2="134"/>
+<circle class="s2" cx="347" cy="154" r="3"/><text class="fg" x="359" y="159">设计稿拆成任务手册</text>
+<circle class="s2" cx="347" cy="178" r="3"/><text class="fg" x="359" y="183">每个任务带依赖和 CHECK</text>
+<circle class="s2" cx="347" cy="202" r="3"/><text class="fg" x="359" y="207">写明派给哪个角色</text>
+<circle class="s2" cx="347" cy="226" r="3"/><text class="fg" x="359" y="231">生成箭线图，算预算</text>
+
+<!-- 闸门 2 -->
+<rect class="gate" x="561" y="130" width="63" height="24" rx="12"/>
+<text class="tg b" x="592.5" y="147" text-anchor="middle" style="font-size:12.5px">你批准</text>
+<line class="ln" x1="557" y1="168" x2="627" y2="168" marker-end="url(#a)"/>
+
+<!-- working -->
+<rect class="card" x="630" y="72" width="230" height="176" rx="12"/>
+<circle class="s3" cx="656" cy="102" r="14"/><text class="w b" x="656" y="107" text-anchor="middle">3</text>
+<text class="t3 b" x="680" y="99" style="font-size:16px">working</text>
+<text class="mu" x="680" y="118" style="font-size:12.5px">派发 · 验收 · 合并</text>
+<line class="dv" x1="646" y1="134" x2="844" y2="134"/>
+<circle class="s3" cx="652" cy="154" r="3"/><text class="fg" x="664" y="159">依赖就绪就并行派发</text>
+<circle class="s3" cx="652" cy="178" r="3"/><text class="fg" x="664" y="183">每个 builder 独立 worktree</text>
+<circle class="s3" cx="652" cy="202" r="3"/><text class="fg" x="664" y="207">门禁独立验收，修一轮</text>
+<circle class="s3" cx="652" cy="226" r="3"/><text class="fg" x="664" y="231">串行合并，记账，汇报</text>
+
+<!-- 出口 -->
+<line class="ln" x1="745" y1="248" x2="745" y2="270" marker-end="url(#a)"/>
+<rect class="done" x="665" y="272" width="160" height="34" rx="17"/>
+<text class="t3 b" x="745" y="294" text-anchor="middle">验收报告 + 进度账本</text>
+
+<!-- 图例 -->
+<rect class="gate" x="20" y="281" width="30" height="16" rx="8"/>
+<text class="note" x="58" y="294">需要你明确批准才放行，沉默或“差不多吧”不算</text>
+</svg>

@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 552" width="880" height="552" role="img" aria-label="角色路由：主会话经 agent-guard 钩子按角色名派发子代理，读与跑、写、门禁、按需四类角色各自绑定模型档位">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;font-size:13px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.b{font-weight:600}
+.lane{fill:#f6f8fa;stroke:#d8dee4}
+.card{fill:#fff;stroke:#d0d7de}
+.hook{fill:#fff;stroke:#fb8f44;stroke-dasharray:6 4}
+.main{fill:#24292f}.tm{fill:#fff}.tms{fill:#d0d7de}
+.fg{fill:#1f2328}.mu{fill:#59636e}.note{fill:#7d8590;font-size:12.5px}
+.ln{stroke:#8c959f;stroke-width:1.5;fill:none}.ar{fill:#8c959f}
+.tg{fill:#bc4c00}
+.haiku{fill:#dafbe1;stroke:#4ac26b}.thaiku{fill:#1a7f37}
+.sonnet{fill:#ddf4ff;stroke:#54aeff}.tsonnet{fill:#0969da}
+.opus{fill:#fbefff;stroke:#c297ff}.topus{fill:#8250df}
+.inherit{fill:#f6f8fa;stroke:#d0d7de}.tinherit{fill:#59636e}
+@media (prefers-color-scheme:dark){
+.lane{fill:#151b23;stroke:#2f353d}
+.card{fill:#212830;stroke:#3d444d}
+.hook{fill:#151b23;stroke:#bd561d}
+.main{fill:#f0f6fc}.tm{fill:#1f2328}.tms{fill:#59636e}
+.fg{fill:#f0f6fc}.mu{fill:#9198a1}
+.ln{stroke:#656c76}.ar{fill:#656c76}
+.tg{fill:#f0883e}
+.haiku{fill:#0f2d1a;stroke:#238636}.thaiku{fill:#3fb950}
+.sonnet{fill:#0c2d6b;stroke:#1f6feb}.tsonnet{fill:#4493f8}
+.opus{fill:#2a1758;stroke:#8957e5}.topus{fill:#ab7df8}
+.inherit{fill:#2f353d;stroke:#3d444d}.tinherit{fill:#9198a1}
+}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ar" d="M0 0L10 5L0 10z"/></marker></defs>
+
+<!-- 主会话 -->
+<rect class="main" x="210" y="12" width="460" height="58" rx="12"/>
+<text class="tm b" x="440" y="37" text-anchor="middle" style="font-size:16px">主会话</text>
+<text class="tms" x="440" y="58" text-anchor="middle" style="font-size:12.5px">拆任务 · 做决策 · 和你对话 · 整合结果　用你选的模型，不被改动</text>
+<line class="ln" x1="440" y1="70" x2="440" y2="94" marker-end="url(#a)"/>
+
+<!-- 钩子 -->
+<rect class="hook" x="20" y="96" width="840" height="40" rx="10"/>
+<text x="440" y="121" text-anchor="middle"><tspan class="tg b mono">agent-guard</tspan><tspan class="tg b"> 钩子　</tspan><tspan class="fg">只认角色名 · 不许临时指定模型 · 每个请求最多派 5 个子代理，第 6 个直接拒绝</tspan></text>
+
+
+<!-- 读与跑 -->
+<line class="ln" x1="119" y1="136" x2="119" y2="162" marker-end="url(#a)"/>
+<rect class="lane" x="20" y="164" width="198" height="314" rx="12"/>
+<text class="fg b" x="34" y="189" style="font-size:15px">读与跑</text>
+<text class="mu" x="34" y="208" style="font-size:12.5px">量大，要快</text>
+<rect class="card" x="30" y="222" width="178" height="76" rx="9"/>
+<text class="fg b mono" x="42" y="247" style="font-size:14px">scout</text>
+<rect class="sonnet" x="140" y="232" width="58" height="20" rx="10"/>
+<text class="tsonnet b" x="169" y="246" text-anchor="middle" style="font-size:11.5px">sonnet</text>
+<text class="fg" x="42" y="270">找文件、事实、调用链</text>
+<text class="mu" x="42" y="288" style="font-size:12px">medium · 只读</text>
+<rect class="card" x="30" y="306" width="178" height="76" rx="9"/>
+<text class="fg b mono" x="42" y="331" style="font-size:14px">runner</text>
+<rect class="haiku" x="146" y="316" width="52" height="20" rx="10"/>
+<text class="thaiku b" x="172" y="330" text-anchor="middle" style="font-size:11.5px">haiku</text>
+<text class="fg" x="42" y="354">跑命令，带回原始输出</text>
+<text class="mu" x="42" y="372" style="font-size:12px">low · 不解读结果</text>
+<text class="mu" x="34" y="408" style="font-size:12.5px">跨模块或超过 5 个文件时</text>
+<text class="mu" x="34" y="427" style="font-size:12.5px">按模块派 scout，</text>
+<text class="mu" x="34" y="446" style="font-size:12.5px">最多 3 个同时跑</text>
+
+<!-- 写 -->
+<line class="ln" x1="333" y1="136" x2="333" y2="162" marker-end="url(#a)"/>
+<rect class="lane" x="234" y="164" width="198" height="314" rx="12"/>
+<text class="fg b" x="248" y="189" style="font-size:15px">写</text>
+<text class="mu" x="248" y="208" style="font-size:12.5px">一次一个，边界清楚</text>
+<rect class="card" x="244" y="222" width="178" height="76" rx="9"/>
+<text class="fg b mono" x="256" y="247" style="font-size:14px">builder</text>
+<rect class="sonnet" x="354" y="232" width="58" height="20" rx="10"/>
+<text class="tsonnet b" x="383" y="246" text-anchor="middle" style="font-size:11.5px">sonnet</text>
+<text class="fg" x="256" y="270">实现一个已批准的改动</text>
+<text class="mu" x="256" y="288" style="font-size:12px">high · 只改分配的文件</text>
+<text class="mu" x="248" y="324" style="font-size:12.5px">并行的 builder 各用</text>
+<text class="mu" x="248" y="343" style="font-size:12.5px">一个 git worktree，</text>
+<text class="mu" x="248" y="362" style="font-size:12.5px">可写范围互不重叠</text>
+
+<!-- 门禁 -->
+<line class="ln" x1="547" y1="136" x2="547" y2="162" marker-end="url(#a)"/>
+<rect class="lane" x="448" y="164" width="198" height="314" rx="12"/>
+<text class="fg b" x="462" y="189" style="font-size:15px">门禁</text>
+<text class="mu" x="462" y="208" style="font-size:12.5px">和实现分开，独立出证据</text>
+<rect class="card" x="458" y="222" width="178" height="76" rx="9"/>
+<text class="fg b mono" x="470" y="247" style="font-size:14px">verifier</text>
+<rect class="sonnet" x="568" y="232" width="58" height="20" rx="10"/>
+<text class="tsonnet b" x="597" y="246" text-anchor="middle" style="font-size:11.5px">sonnet</text>
+<text class="fg" x="470" y="270">独立跑 CHECK 出证据</text>
+<text class="mu" x="470" y="288" style="font-size:12px">high · 不改源码</text>
+<rect class="card" x="458" y="306" width="178" height="76" rx="9"/>
+<text class="fg b mono" x="470" y="331" style="font-size:14px">reviewer</text>
+<rect class="sonnet" x="568" y="316" width="58" height="20" rx="10"/>
+<text class="tsonnet b" x="597" y="330" text-anchor="middle" style="font-size:11.5px">sonnet</text>
+<text class="fg" x="470" y="354">审 diff：正确性、安全</text>
+<text class="mu" x="470" y="372" style="font-size:12px">high · 只读</text>
+<rect class="card" x="458" y="390" width="178" height="76" rx="9"/>
+<text class="fg b mono" x="470" y="415" style="font-size:14px">critic</text>
+<rect class="sonnet" x="568" y="400" width="58" height="20" rx="10"/>
+<text class="tsonnet b" x="597" y="414" text-anchor="middle" style="font-size:11.5px">sonnet</text>
+<text class="fg" x="470" y="438">动工前反证设计稿</text>
+<text class="mu" x="470" y="456" style="font-size:12px">high · 只读</text>
+
+<!-- 按需 -->
+<line class="ln" x1="761" y1="136" x2="761" y2="162" marker-end="url(#a)"/>
+<rect class="lane" x="662" y="164" width="198" height="314" rx="12"/>
+<text class="fg b" x="676" y="189" style="font-size:15px">按需</text>
+<text class="mu" x="676" y="208" style="font-size:12.5px">很少用到</text>
+<rect class="card" x="672" y="222" width="178" height="76" rx="9"/>
+<text class="fg b mono" x="684" y="247" style="font-size:14px">designer</text>
+<rect class="inherit" x="796" y="232" width="44" height="20" rx="10"/>
+<text class="tinherit b" x="818" y="246" text-anchor="middle" style="font-size:11.5px">继承</text>
+<text class="fg" x="684" y="270">隔离出去的设计</text>
+<text class="mu" x="684" y="288" style="font-size:12px">主会话模型 · 只读</text>
+<rect class="card" x="672" y="306" width="178" height="76" rx="9"/>
+<text class="fg b mono" x="684" y="331" style="font-size:14px">judge</text>
+<rect class="opus" x="792" y="316" width="48" height="20" rx="10"/>
+<text class="topus b" x="816" y="330" text-anchor="middle" style="font-size:11.5px">opus</text>
+<text class="fg" x="684" y="354">门禁结论冲突时裁决</text>
+<text class="mu" x="684" y="372" style="font-size:12px">max · 你点名才用</text>
+<text class="mu" x="676" y="408" style="font-size:12.5px">升级靠换角色，</text>
+<text class="mu" x="676" y="427" style="font-size:12.5px">不给同一角色换贵模型</text>
+
+<!-- 图例 -->
+<text class="note" x="20" y="508">模型档位</text>
+<rect class="haiku" x="86" y="494" width="52" height="20" rx="10"/>
+<text class="thaiku b" x="112" y="508" text-anchor="middle" style="font-size:11.5px">haiku</text>
+<text class="note" x="146" y="508">便宜、快</text>
+<rect class="sonnet" x="218" y="494" width="58" height="20" rx="10"/>
+<text class="tsonnet b" x="247" y="508" text-anchor="middle" style="font-size:11.5px">sonnet</text>
+<text class="note" x="284" y="508">读、写、审的主力</text>
+<rect class="opus" x="406" y="494" width="48" height="20" rx="10"/>
+<text class="topus b" x="430" y="508" text-anchor="middle" style="font-size:11.5px">opus</text>
+<text class="note" x="462" y="508">最强，只做仲裁</text>
+<rect class="inherit" x="571" y="494" width="44" height="20" rx="10"/>
+<text class="tinherit b" x="593" y="508" text-anchor="middle" style="font-size:11.5px">继承</text>
+<text class="note" x="623" y="508">跟主会话同一个模型</text>
+<text class="note" x="20" y="536">以上是 Claude Code 的绑定。Codex 的模型写在 ~/.codex/agents/*.toml 里；Qwen Code 默认全部继承主会话模型。</text>
+</svg>
