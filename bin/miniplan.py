@@ -16,6 +16,7 @@ COMMANDS = {
     'check': ('ledger', 'cmd_check'),
     'release': ('ledger', 'cmd_release'),
     'trace': ('trace', 'cmd_trace'),
+    'test': ('gate', 'cmd_test'),
 }
 
 
@@ -54,6 +55,8 @@ def build_parser():
     p = add('trace', '统计会话并发度')
     p.add_argument('files', nargs='+', metavar='file')
     p.add_argument('--json', action='store_true')
+    p = add('test', '经本机共用的测试槽位运行命令（限同时运行数与内存）')
+    p.add_argument('cmd', nargs=argparse.REMAINDER)
     return ap
 
 

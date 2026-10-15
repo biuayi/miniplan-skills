@@ -64,7 +64,7 @@ if [ "$1" = reset ]; then
   fi
   prompt=$(jq -r '.prompt // ""' <<<"$input")
   case "$prompt" in
-    *"<task-notification>"*|*"<agent-message "*|*"[SYSTEM NOTIFICATION - NOT USER INPUT]"*|*"[Your previous response had no visible output"*) exit 0 ;;
+    *"<task-notification>"*|*"<agent-message "*|*"<cross-session-message "*|*"[SYSTEM NOTIFICATION - NOT USER INPUT]"*|*"[Your previous response had no visible output"*) exit 0 ;;
   esac
   : > "$counter"
   find "$STATE_DIR" -type f -mmin +1440 -delete 2>/dev/null
