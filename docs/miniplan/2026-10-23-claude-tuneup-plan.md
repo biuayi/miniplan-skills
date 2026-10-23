@@ -21,11 +21,11 @@
 
 ```mermaid
 flowchart LR
-  E1((①)) -->|"T1 工作流冲突说明与修复提示 ⏳"| E2((②))
-  E1 -->|"T2 基础层、入口、会话注入与 working ⏳"| E3((③))
-  E1 -->|"T3 plans、brainstorming 与模板 ⏳"| E4((④))
-  E1 -->|"T4 角色文件 ⏳"| E5((⑤))
-  E1 -->|"T6 对照评测用例 ⏳"| E8((⑧))
+  E1((①)) -->|"T1 工作流冲突说明与修复提示 ✅"| E2((②))
+  E1 -->|"T2 基础层、入口、会话注入与 working ✅"| E3((③))
+  E1 -->|"T3 plans、brainstorming 与模板 ✅"| E4((④))
+  E1 -->|"T4 角色文件 ✅"| E5((⑤))
+  E1 -->|"T6 对照评测用例 ✅"| E8((⑧))
   E1 -->|"T7 版本与更新记录 ✅"| E9((⑨))
   E1 -->|"T8 本机精简输出配置 ✅"| E10((⑩))
   E2 -.->|"虚工作"| E13((⑬))
@@ -53,7 +53,7 @@ DEPENDS  none
 REALIZES A1, A6
 GOAL     流程仿真测试锁定「修复后再遇合并冲突仍处理一次」，修复提示要求先写根因假设，脚本注释与行为一致
 DELIVER  claude/workflows/run-manual.js（repairing 上方注释、repairPrompt 一行）, tests/test_wf_sim.py（Conflict 类新增一例）
-CHECK    cd tests && python3 -I -m unittest test_wf_sim  → exit 0
+CHECK    bash tests/run.sh test_wf_sim.py  → exit 0
          grep -q "def test_conflict_after_repair_is_handled" tests/test_wf_sim.py
          grep -q "根因假设" claude/workflows/run-manual.js
          ! grep -n "共用同一次修复机会" claude/workflows/run-manual.js
@@ -76,7 +76,7 @@ PROMPT   builder:
          SCOPE: claude/workflows/run-manual.js 的 repairing 函数上方注释与 repairPrompt 函数；tests/test_wf_sim.py 的 Conflict 类。
          CONTEXT: 现注释是 `// 修复和冲突处理共用同一次修复机会；账本里只写一行 repair。`，但代码的实际行为是：门禁失败只修一次，冲突处理过也算修过（gateStage 在 st.repaired 时直接 failed）；合并冲突总能处理一次（conflictStage 不检查 st.repaired），账本只写一行 repair。已用仿真器确认 CHECK 中新测试的 labels 序列就是现有行为。repairPrompt 里有一行 `'下面是原契约，末尾的 REPAIR ROUND 是门禁给出的问题；只修这些问题，修好后提交并把新 sha 填进 commit。',`，在它后面加一行 `'动手前先用一句话写出根因假设，放进 SUMMARY 开头。',`。只改 Claude 路径（`A.host === 'codex'` 分支不动）。
          CONSTRAINTS: 不改调度行为；不改 `async function call(prompt, label, phaseTitle, schema, role) {` 这一行和 `agent(prompt, { label, phase: phaseTitle, schema, agentType: 'miniplan:' + role })` 调用（Qwen 构建按原文替换它们）。新注释写成 `// 门禁失败只修一次, 冲突处理过也算修过; 合并冲突总能处理一次; 账本只写一行 repair`。测试名不含任务编号以外的过程词汇，测试代码照 CHECK 原样加入。
-         ACCEPTANCE: cd tests && python3 -I -m unittest test_wf_sim → exit 0; grep -q "def test_conflict_after_repair_is_handled" tests/test_wf_sim.py; grep -q "根因假设" claude/workflows/run-manual.js; ! grep -n "共用同一次修复机会" claude/workflows/run-manual.js
+         ACCEPTANCE: bash tests/run.sh test_wf_sim.py → exit 0; grep -q "def test_conflict_after_repair_is_handled" tests/test_wf_sim.py; grep -q "根因假设" claude/workflows/run-manual.js; ! grep -n "共用同一次修复机会" claude/workflows/run-manual.js
          OWNERSHIP: claude/workflows/run-manual.js, tests/test_wf_sim.py
          BUDGET: 20 次工具调用 / 15 分钟
          RETURN: STATUS / SUMMARY / EVIDENCE / CHANGES / VALIDATION / RISKS / NEXT
@@ -85,7 +85,7 @@ PROMPT   builder:
          SCOPE: 本任务工作树；只读。
          CONTEXT: 改动只应涉及 run-manual.js 的一处注释与 repairPrompt 新增一行，以及 test_wf_sim.py 新增一个测试；用 git diff 核对没有其他行为改动。
          CONSTRAINTS: 不改文件。
-         ACCEPTANCE: cd tests && python3 -I -m unittest test_wf_sim → exit 0; grep -q "def test_conflict_after_repair_is_handled" tests/test_wf_sim.py; grep -q "根因假设" claude/workflows/run-manual.js; ! grep -n "共用同一次修复机会" claude/workflows/run-manual.js
+         ACCEPTANCE: bash tests/run.sh test_wf_sim.py → exit 0; grep -q "def test_conflict_after_repair_is_handled" tests/test_wf_sim.py; grep -q "根因假设" claude/workflows/run-manual.js; ! grep -n "共用同一次修复机会" claude/workflows/run-manual.js
          OWNERSHIP: read-only
          BUDGET: 10 次工具调用 / 10 分钟
          RETURN: 每条 CHECK 的 pass / fail / not verifiable 与原始输出摘录
@@ -153,7 +153,7 @@ CHECK    ! grep -rnE "EIM_|L/D/F/O/S" claude/skills/plans claude/skills/brainsto
          test "$(sed -n '/^## Anti-patterns/,$p' claude/skills/brainstorming/SKILL.md | grep -c '^- ')" -eq 2
          grep -q "^BUDGET: 30 tool calls / 10 minutes" claude/skills/brainstorming/references/falsify.md
          ! grep -n "Every objection needs evidence you read" claude/skills/brainstorming/references/falsify.md
-         cd tests && python3 -I -m unittest test_manual test_graph test_ledger  → exit 0
+         bash tests/run.sh test_manual.py && bash tests/run.sh test_graph.py && bash tests/run.sh test_ledger.py  → exit 0
 AGENTS   builder OWNS: claude/skills/plans/, claude/skills/brainstorming/ ; verifier read-only
 PROMPT   builder:
          OBJECTIVE: 按下列逐条改动精简 plans 与 brainstorming 两个 skill 及其模板，并补三句规则。
@@ -224,7 +224,7 @@ DEPENDS  T2, T3
 REALIZES A4
 GOAL     不耗 token 的单元测试守住触发词不重复、无项目泄漏词、会话注入不含 Codex 段
 DELIVER  tests/test_skill_text.py
-CHECK    cd tests && python3 -I -m unittest test_skill_text -v  → exit 0，3 个测试 ok
+CHECK    bash tests/run.sh test_skill_text.py  → exit 0，3 个测试 ok
          设计验收测试（tests/test_skill_text.py 全文）：
          ```python
          import json
@@ -292,9 +292,9 @@ AGENTS   builder OWNS: tests/test_skill_text.py ; verifier read-only
 PROMPT   builder:
          OBJECTIVE: 新建 tests/test_skill_text.py，内容照 CHECK 中的测试全文，使其通过。
          SCOPE: 只新建这一个文件。
-         CONTEXT: tests 用 `python3 -I -m unittest` 在 tests/ 目录下运行，`from _util import ROOT` 得到仓库根。前置任务已把 brainstorming 描述里的宽泛触发词移到入口 skill，删掉了两处项目泄漏，并让 SessionStart 注入过滤 Codex 段。若测试失败，说明前置任务的结果不符，返回 blocked 并附失败输出，不要改测试去迁就，也不要改 OWNS 以外的文件。
+         CONTEXT: tests 用 `bash tests/run.sh <文件名>` 运行，`from _util import ROOT` 得到仓库根。前置任务已把 brainstorming 描述里的宽泛触发词移到入口 skill，删掉了两处项目泄漏，并让 SessionStart 注入过滤 Codex 段。若测试失败，说明前置任务的结果不符，返回 blocked 并附失败输出，不要改测试去迁就，也不要改 OWNS 以外的文件。
          CONSTRAINTS: 测试代码照抄 CHECK 全文；不加注释。
-         ACCEPTANCE: cd tests && python3 -I -m unittest test_skill_text -v → exit 0，3 个测试 ok
+         ACCEPTANCE: bash tests/run.sh test_skill_text.py → exit 0，3 个测试 ok
          OWNERSHIP: tests/test_skill_text.py
          BUDGET: 10 次工具调用 / 10 分钟
          RETURN: STATUS / SUMMARY / EVIDENCE / CHANGES / VALIDATION / RISKS / NEXT
@@ -303,7 +303,7 @@ PROMPT   builder:
          SCOPE: 本任务工作树；只读。
          CONTEXT: 测试文件应与手册 CHECK 中的全文一致。
          CONSTRAINTS: 不改文件。
-         ACCEPTANCE: cd tests && python3 -I -m unittest test_skill_text -v → exit 0，3 个测试 ok
+         ACCEPTANCE: bash tests/run.sh test_skill_text.py → exit 0，3 个测试 ok
          OWNERSHIP: read-only
          BUDGET: 8 次工具调用 / 10 分钟
          RETURN: 每条 CHECK 的 pass / fail / not verifiable 与原始输出摘录
@@ -427,3 +427,11 @@ PROMPT   verifier:
 T7: complete — 版本 0.4.0，CHANGELOG 含 claude plugin eval，提交 cbab1dd
 T8: complete — outputStyle=Concise，全局规则对话节含不写开场白一行，改前备份在会话草稿目录
 Ruling: 运行对照评测的 runner 只写会话草稿目录，不改仓库文件 — 集成副本只读的要求针对仓库 — 若 runner 拒绝写草稿目录则该任务 blocked，改由主线程运行
+T1: complete — 合并 46d2c8e；verifier pass：1) The CHECK command as written, `bash tests/run.sh test_wf_sim.py`, exits 1 with `ModuleNotFoundError: No
+T2: complete — 合并 b8cea20；verifier pass：All 16 CHECK items were run in the task worktree with MINIPLAN_SLOT=1, and all passed. The script ran each one-line CHEC
+T3: repair 1 — verifier：前 13 条 grep/test 类 CHECK 逐条运行，全部通过（EIM_ 与 L/D/F/O/S 无残留；APP_PORT 行、High-risk tasks go first、reproduces the bug、
+T3: failed — gate verifier：verifier：The first 13 CHECKs (the grep, sed and test ones) all passed, and I ran each by its original wording. They cove
+T4: complete — 合并 0fe761b；verifier pass：All 9 CHECKs pass. 7 positive greps (builder 3, reviewer, scout, judge, designer) exited rc=0. 2 negated checks (builder
+T6: complete — 合并 52491ed；verifier pass：5 条 CHECK 逐条在工作树 .../mp-claude-tuneup-t6 运行，全部通过： 1) 4 个用例的 prompt.md、case.yaml、fixture.sh、graders/*.md 齐全，bash -n 通过，循环
+Ruling: 手册里 T1、T3、T5 的测试命令 python3 -I -m unittest <模块> 在 tests 下因 -I 去掉当前目录而无法导入，改为 bash tests/run.sh <文件> — 与仓库自带脚本一致，意图不变 — 若改错，测试会在门禁里失败而非漏过
+T3: complete — 合并 6023fea；verifier 已逐条通过 13 条文本检查且 diff 只含清单内改动，失败只因测试命令写法；主线程在 T3 工作树复跑 13 条与 bash tests/run.sh test_manual.py/test_graph.py/test_ledger.py 全部 OK
