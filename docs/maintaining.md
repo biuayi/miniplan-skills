@@ -39,19 +39,17 @@ bash tests/run.sh   # 测试
 
 改提示词后，用 `claude/evals/` 下的 4 个用例验证入口路由、设计批准门、手册批准门没有退化，简单任务也不会被误触发。评分器全部是确定性的，不调用模型打分。
 
+在特性分支上运行：
+
 ```bash
-claude plugin eval claude --ablation none --model opus --allow-tools Write Edit --scaffold --trust-plugin --no-publish --threshold 0 --json <结果.json> --output-dir <目录> --max-cost-usd <上限>
+python3 -I tests/eval_compare.py claude --max-cost-usd <上限>
 ```
 
-对照方法：
+脚本取出基线（HEAD 与本地 main 的分叉点，也可用 `--base` 指定）的插件目录，两边使用当前的 `claude/evals`，依次跑评测，再按评分项通过率逐项标记。评测默认每个用例跑 3 次；排除出错的运行后，两边通过率差达到一半以上记「退化」，同方向但不足一半记「波动」，有效次数不足 2 记「不足」。出现退化时，按脚本打印的命令每边跑 6 次复核。
 
-1. `git archive <基线提交> claude | tar -x -C <临时目录>`，取出基线版本。
-2. 把当前的 `claude/evals` 复制到临时目录的 `claude/` 下。
-3. 两边各跑一次上面的命令，比较结果 JSON 里 `cases[].aggregates.score`。
-
-- 默认会把报告发布到 claude.ai，所以必须带 `--no-publish`。
-- 每次运行都计入套餐额度，用 `--max-cost-usd` 设上限。
-- 结果写在 `claude/evals/results/` 时已被 `.gitignore` 忽略。
+- 脚本已带 `--no-publish`，评测默认会把报告发布到 claude.ai，手工运行 `claude plugin eval` 时必须自己加。
+- 每次运行都计入套餐额度，`--max-cost-usd` 必填，每边各自计上限；触顶得到的不完整结果不会被比较。
+- 结果写在脚本打印的结果目录里；手工运行写在 `claude/evals/results/` 时已被 `.gitignore` 忽略。
 
 ## 已知限制
 
