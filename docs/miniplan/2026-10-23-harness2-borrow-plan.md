@@ -1,7 +1,7 @@
 # 借鉴 Harness² 改进门禁与契约 任务手册
 
 设计稿：docs/miniplan/2026-10-23-harness2-borrow-design.md（已批准 2026-10-23）
-状态：已批准（2026-10-23）
+状态：已完成（2026-10-23）
 集成分支：harness2-borrow
 并发：6
 测试并发：3
@@ -30,7 +30,7 @@ flowchart LR
   E5 -.->|"虚工作"| E7
   E6 -.->|"虚工作"| E7
   E7 -->|"T6 最终门禁 ✅"| E8((⑧))
-  E7 -->|"T7 真实对照评测 ⏳"| E9((⑨))
+  E7 -->|"T7 真实对照评测 ✅"| E9((⑨))
   E8 -.->|"虚工作"| E10((⑩))
   E9 -.->|"虚工作"| E10
 ```
@@ -533,3 +533,4 @@ Ruling: T3 builder 为校验锚点在工作树里运行了 build.sh 并用 git c
 T2: complete — 合并 7350a29；verifier pass：test_wf_sim.py 44 个用例 OK（新增 10 个与手册逐字一致），Codex 修复提示 grep 命中，S_GATE 未改，无日志路径时账本行与改前一致，测试未被改弱
 T4: complete — 合并 bde0364；verifier pass：test_eval_compare.py 12 个用例 OK（与手册逐字一致），--help 含 --max-cost-usd，维护说明两条 grep 命中，默认参数与判定规则与契约一致，假 claude 端到端演练退化/拒绝/一致三种出口正确
 T6: complete — verifier pass：bash tests/run.sh 264 个测试 OK；临时副本 build.sh 成功（built dist/miniplan-v0.4.0.zip）；codex/qwen/dist/build.sh 无改动；完整输出 /home/hertz/Project/miniplan-skills/.git/miniplan/test-logs/20261023T173616Z-313972.log
+T7: complete — 主线程运行 eval_compare.py claude --base main --max-cost-usd 8，exit 0；基线 4d2afaf，24 次运行，13 个评分项全部一致、无退化；费用基线 1.99、改后 2.08 美元；结果目录在会话草稿 eval-t7
