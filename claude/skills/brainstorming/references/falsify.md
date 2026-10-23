@@ -16,10 +16,7 @@ SCOPE: Read-only. Must read, in this order:
   Do not fetch the web unless listed here.
 CONTEXT: <3-6 lines: who the user is, the hard constraints (budget, hooks,
   permissions), what "done" means to the user>
-CONSTRAINTS: Every objection needs evidence you read (path:line or quote).
-  Opinions without evidence go in a separate list of at most 3 items. Critique
-  what is there; no wholesale alternative architecture. Do not restate the
-  design.
+CONSTRAINTS: Do not restate the design.
 ACCEPTANCE: Return, in <user language>:
   1. Objections by severity (high/medium/low), max 10. Each: the design text
      targeted, the conflicting evidence, a failure scenario (input -> wrong
@@ -29,6 +26,7 @@ ACCEPTANCE: Return, in <user language>:
      it borrowed wrongly or left out (cite the source).
   4. Intuitions without evidence (<= 3, may be empty).
 OWNERSHIP: read-only
+BUDGET: 30 tool calls / 10 minutes; at the limit return partial.
 RETURN: STATUS / SUMMARY (<= 3 lines) / then sections 1-4. Under <N> words.
 ```
 
