@@ -34,14 +34,14 @@ flowchart LR
   E4 -.->|"虚工作"| E6
   E4 -.->|"虚工作"| E11
   E5 -.->|"虚工作"| E11
-  E6 -->|"T5 skill 文本测试 ⏳"| E7((⑦))
+  E6 -->|"T5 skill 文本测试 ✅"| E7((⑦))
   E7 -.->|"虚工作"| E13
   E8 -.->|"虚工作"| E11
   E9 -.->|"虚工作"| E13
   E10 -.->|"虚工作"| E13
-  E11 -->|"T9 运行对照评测 ⏳"| E12((⑫))
+  E11 -->|"T9 运行对照评测 ✅"| E12((⑫))
   E12 -.->|"虚工作"| E13
-  E13 -->|"T10 最终门禁 ⏳"| E14((⑭))
+  E13 -->|"T10 最终门禁 🔁"| E14((⑭))
 ```
 最长链：3 个任务（T2→T5→T10；等长另有 5 条），至少 3 层
 状态：⏳未开始 🔄进行中 ✅完成 🔁返工 ❌失败（working 每次记账后同步刷新）
@@ -435,3 +435,6 @@ T4: complete — 合并 0fe761b；verifier pass：All 9 CHECKs pass. 7 positive 
 T6: complete — 合并 52491ed；verifier pass：5 条 CHECK 逐条在工作树 .../mp-claude-tuneup-t6 运行，全部通过： 1) 4 个用例的 prompt.md、case.yaml、fixture.sh、graders/*.md 齐全，bash -n 通过，循环
 Ruling: 手册里 T1、T3、T5 的测试命令 python3 -I -m unittest <模块> 在 tests 下因 -I 去掉当前目录而无法导入，改为 bash tests/run.sh <文件> — 与仓库自带脚本一致，意图不变 — 若改错，测试会在门禁里失败而非漏过
 T3: complete — 合并 6023fea；verifier 已逐条通过 13 条文本检查且 diff 只含清单内改动，失败只因测试命令写法；主线程在 T3 工作树复跑 13 条与 bash tests/run.sh test_manual.py/test_graph.py/test_ledger.py 全部 OK
+T5: complete — 合并 0b8be1c；verifier pass：在 mp-claude-tuneup-t5 工作树经测试槽位运行 `bash tests/run.sh test_skill_text.py -v`，exit=0。输出：test_no_project_specific_text ... o
+T9: complete
+T10: repair 1 — verifier：STATUS: fail. 4 of 5 CHECKs pass; the eval comparison CHECK fails. 1. bash tests/run.sh: pass. Ran 224 tests, O
