@@ -143,8 +143,7 @@ Used for old-format manuals and wherever a scripted run is unavailable.
   `miniplan.py merge-check <plan> <T> <branch>` (non-zero exit: do not merge),
   then `git merge --no-ff -m "<task title>" <branch>` in the integration copy,
   then `git worktree remove <path>`. On a conflict, `git merge --abort` and send
-  the task's builder to merge the integration branch inside its own worktree;
-  that is the task's one repair, followed by a re-gate.
+  the task's builder to merge the integration branch inside its own worktree, then re-gate. A conflict is handled once even after a repair; one handled before any repair uses up the repair.
 - Send the manual's PROMPT verbatim with `subagent_type: miniplan:<role>`
   (the AGENTS field names the role bare). Add only facts that came into
   existence after planning (a path a previous task created). Never forward
@@ -177,9 +176,7 @@ Used for old-format manuals and wherever a scripted run is unavailable.
   not verifiable.
 - Ledger on the gate's evidence. After merging, spot-check the merge diff. If
   you and the gate disagree, the report says so; do not pick one silently.
-- Fail: one repair round, with the gate's findings as the changed input, then
-  re-gate the fix only. A second fail goes to the user.
-  `judge` only when the user asks.
+- Fail: one repair round. Its contract carries the failing command and its output, and the builder states a one-line root-cause hypothesis before editing. Re-gate the fix only. A second fail goes to the user. `judge` only when the user asks.
 - A child returning `blocked` or `partial` with a question: answer from the
   design or manual and respawn once with the answer; otherwise carry it to the
   user.
@@ -225,11 +222,9 @@ line to `## Progress`. On resume the `## Progress` lines are authoritative;
 
 ```text
 PROGRESS: <a>/<b> 任务完成；第 <k> 次运行；最长链还剩 <z> 个任务；派发 <spawned>/<budget>
-ACCEPTANCE: A1 pass (evidence) / A2 fail (why) / A3 not verified (why)
-CHANGES: files, systems, commands run
+ACCEPTANCE: A1 pass / A2 fail (why) / A3 not verified (why)
 RULINGS: decisions made without asking
-LEFT OUT: skipped or descoped, and why
-NEXT: what needs the user (approvals, follow-ups, next run)
+NEXT: what needs the user (approvals, follow-ups, next run), and anything skipped or descoped with why
 ```
 
 <!-- host:claude-code -->
@@ -245,13 +240,3 @@ reported as done without a pass line with evidence.
 
 - Reporting the builder's VALIDATION as verification.
 - Fixing the gate's findings in the main thread and skipping the re-gate.
-- Re-dispatching a task that has a complete line.
-- Ending a run on an unverified builder.
-- Ledgering a task complete while its arrow in the 箭线图 still reads ⏳.
-- Raising the budget without the approval recorded in the manual header.
-- Running a full suite in a builder, or again after the final gate ran it.
-<!-- host:claude-code -->
-- Dispatching builders by hand during a workflow run without `release`.
-- Hand-assembling `args` for the Workflow call when the hook can fill them.
-- Editing the integration copy while a run is in the background.
-<!-- /host -->

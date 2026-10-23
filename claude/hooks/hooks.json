@@ -13,7 +13,7 @@
       { "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-guard.sh\" stop", "timeout": 20 } ] }
     ],
     "SessionStart": [
-      { "hooks": [ { "type": "command", "command": "jq -Rs --arg root \"${CLAUDE_PLUGIN_ROOT}\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"# miniplan:agents (auto-loaded at session start)\\n\\n\" + (split(\"${\" + \"CLAUDE_PLUGIN_ROOT}\") | join($root)))}}' \"${CLAUDE_PLUGIN_ROOT}/skills/agents/SKILL.md\"", "timeout": 10 } ]
+      { "hooks": [ { "type": "command", "command": "jq -Rs --arg root \"${CLAUDE_PLUGIN_ROOT}\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"# miniplan:agents (auto-loaded at session start)\\n\\n\" + (gsub(\"<!-- host.codex[^\\n]*\\n(.*\\n)*?-->\\n\"; \"\") | split(\"${\" + \"CLAUDE_PLUGIN_ROOT}\") | join($root)))}}' \"${CLAUDE_PLUGIN_ROOT}/skills/agents/SKILL.md\"", "timeout": 10 } ]
       }
     ]
   }
