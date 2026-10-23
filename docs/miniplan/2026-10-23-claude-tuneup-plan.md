@@ -26,8 +26,8 @@ flowchart LR
   E1 -->|"T3 plans、brainstorming 与模板 ⏳"| E4((④))
   E1 -->|"T4 角色文件 ⏳"| E5((⑤))
   E1 -->|"T6 对照评测用例 ⏳"| E8((⑧))
-  E1 -->|"T7 版本与更新记录 ⏳"| E9((⑨))
-  E1 -->|"T8 本机精简输出配置 ⏳"| E10((⑩))
+  E1 -->|"T7 版本与更新记录 ✅"| E9((⑨))
+  E1 -->|"T8 本机精简输出配置 ✅"| E10((⑩))
   E2 -.->|"虚工作"| E13((⑬))
   E3 -.->|"虚工作"| E6((⑥))
   E3 -.->|"虚工作"| E11((⑪))
@@ -424,3 +424,6 @@ PROMPT   verifier:
          RETURN: 每条 CHECK 的 pass / fail / not verifiable 与原始输出摘录；评测对照表原样附上
 
 ## Progress
+T7: complete — 版本 0.4.0，CHANGELOG 含 claude plugin eval，提交 cbab1dd
+T8: complete — outputStyle=Concise，全局规则对话节含不写开场白一行，改前备份在会话草稿目录
+Ruling: 运行对照评测的 runner 只写会话草稿目录，不改仓库文件 — 集成副本只读的要求针对仓库 — 若 runner 拒绝写草稿目录则该任务 blocked，改由主线程运行
