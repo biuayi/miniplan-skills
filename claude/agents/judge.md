@@ -1,6 +1,6 @@
 ---
 name: judge
-description: Resolves material conflicts between review or verification results and makes high-risk acceptance decisions. Use only when evidence conflicts or bounded repair rounds fail.
+description: Resolves material conflicts between review or verification results and makes high-risk acceptance decisions. Use only when the user asks.
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 model: opus
 effort: max
