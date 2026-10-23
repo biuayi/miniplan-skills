@@ -16,6 +16,7 @@
 ```bash
 claude plugin marketplace add biuayi/miniplan-skills
 claude plugin install miniplan@miniplan-skills
+claude plugin install plainwrite@miniplan-skills   # 可选：中英双语写作规则与 /plainwrite 改写
 ```
 
 在会话里也可以用 `/plugin marketplace add biuayi/miniplan-skills` 和 `/plugin install miniplan@miniplan-skills`。2.1.275 及以上版本还能一步完成：`/plugin install miniplan --marketplace biuayi/miniplan-skills`。
@@ -25,6 +26,7 @@ claude plugin install miniplan@miniplan-skills
 ```bash
 claude plugin marketplace update miniplan-skills
 claude plugin update miniplan@miniplan-skills     # 之后重启会话或 /reload-plugins
+claude plugin update plainwrite@miniplan-skills
 ```
 
 也可以开自动更新：在 `/plugin` → Marketplaces → miniplan-skills 里选 Enable auto-update。第三方市场默认是关闭的。
@@ -110,7 +112,7 @@ qwen extensions install https://github.com/biuayi/miniplan-skills/archive/refs/h
 qwen extensions install git@github.com:biuayi/miniplan-skills.git --ref qwen-extension
 ```
 
-不要用 `https://github.com/biuayi/miniplan-skills --ref qwen-extension`。对 HTTPS 的 GitHub 仓库地址，Qwen 会忽略 `--ref`，先读默认分支的 `.claude-plugin/marketplace.json`，然后把 Claude 版转换后装上，这样装出来的角色和钩子在 Qwen 上不能正常工作。
+不要用 `https://github.com/biuayi/miniplan-skills --ref qwen-extension`。对 HTTPS 的 GitHub 仓库地址，Qwen 会忽略 `--ref`，先读默认分支的 `.claude-plugin/marketplace.json`，然后把 Claude 版转换后装上，这样装出来的角色和钩子在 Qwen 上不能正常工作。plainwrite 也在这份清单里，会一并被转换，它的 Sonnet 文档检查钩子在 Qwen 里不生效。
 
 加 `--auto-update` 会自动跟进更新；加 `--consent` 可以跳过确认。
 
