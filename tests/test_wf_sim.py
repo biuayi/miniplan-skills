@@ -275,6 +275,17 @@ class Conflict(unittest.TestCase):
         self.assertNotIn('T1 repair', labels(out))
         self.assertEqual(labels(out).count('T1 merge'), 1)
 
+    def test_conflict_after_repair_is_handled(self):
+        rules = [{'label': 'T1 verifier', 'nth': 1,
+                  'result': {'verdict': 'fail', 'evidence': 'x', 'findings': ['bad']}},
+                 {'label': 'T1 merge', 'nth': 1, 'result': self.CONFLICT}]
+        out = sim(make_args([task(1)]), rules)
+        self.assertEqual(labels(out), ['T1 builder', 'T1 verifier', 'T1 repair', 'T1 verifier',
+                                       'T1 merge', 'T1 conflict', 'T1 verifier', 'T1 merge'])
+        self.assertEqual(by_id(out)['T1']['status'], 'complete')
+        self.assertEqual(len([x for x in out['result']['ledger'] if x.startswith('T1: repair')]), 1)
+        self.assertIn('根因假设', call(out, 'T1 repair')['prompt'])
+
 
 class Main(unittest.TestCase):
     def test_main_waits_and_blocks_downstream(self):
