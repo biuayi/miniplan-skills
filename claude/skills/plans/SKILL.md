@@ -129,7 +129,8 @@ error handling", "同 T<n>", "为上述内容写测试" without the test text,
   disjoint questions, a runner collecting evidence before a builder. Each
   gets its own Task Contract with OBJECTIVE from GOAL, ACCEPTANCE equal to
   CHECK, OWNERSHIP equal to OWNS, and CONTEXT holding only the facts that
-  agent needs — never the conversation, never the whole design.
+  agent needs,
+  each with its source (path:line or command) or marked assumption — never the conversation, never the whole design.
 - Gate per task: `verifier` when CHECK is runnable, `reviewer` when the risk
   is logic or security, both only for high-risk tasks. AGENTS names roles
   bare; `working` spawns them as `miniplan:<role>`.
