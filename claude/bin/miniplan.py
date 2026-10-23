@@ -56,6 +56,7 @@ def build_parser():
     p.add_argument('files', nargs='+', metavar='file')
     p.add_argument('--json', action='store_true')
     p = add('test', '经本机共用的测试槽位运行命令（限同时运行数与内存）')
+    p.add_argument('--log', action='store_true', help='完整输出存进日志文件，只在终端打印路径与末尾 40 行')
     p.add_argument('cmd', nargs=argparse.REMAINDER)
     return ap
 

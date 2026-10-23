@@ -1,5 +1,6 @@
 """test：机器级测试闸门，限制本机同时运行的测试数，并给每次运行加内存上限。"""
 import ctypes
+import datetime
 import fcntl
 import os
 import shutil
@@ -12,6 +13,9 @@ SLOTS = 2
 MEM = '4G'
 HELD = 'MINIPLAN_TEST_HELD'   # 已在槽位里：嵌套调用直接运行，不再占第二个槽位
 PR_SET_PDEATHSIG = 1
+LOG_KEEP_DAYS = 30
+TAIL_LINES = 40
+TAIL_BYTES = 64 * 1024
 
 
 def _err(msg):
@@ -66,11 +70,71 @@ def _die_with_parent():
         pass
 
 
-def _run(cmd, env):
-    p = subprocess.Popen(cmd, env=env, preexec_fn=_die_with_parent)
-    for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
-        signal.signal(sig, lambda s, _f: p.send_signal(s))
-    return p.wait()
+def _log_dir():
+    d = os.environ.get('MINIPLAN_TEST_LOG_DIR')
+    if d:
+        return d
+    r = subprocess.run(['git', 'rev-parse', '--git-common-dir'], capture_output=True, text=True)
+    if r.returncode != 0 or not r.stdout.strip():
+        raise OSError('不在 Git 仓库里，且未设置 MINIPLAN_TEST_LOG_DIR')
+    return os.path.join(os.path.abspath(os.path.join(os.getcwd(), r.stdout.strip())), 'miniplan', 'test-logs')
+
+
+def _prune(d):
+    cutoff = time.time() - LOG_KEEP_DAYS * 86400
+    try:
+        for name in os.listdir(d):
+            path = os.path.join(d, name)
+            try:
+                if os.path.isfile(path) and os.path.getmtime(path) < cutoff:
+                    os.remove(path)
+            except OSError:
+                pass
+    except OSError:
+        pass
+
+
+def _open_log():
+    try:
+        d = os.path.abspath(_log_dir())
+        os.makedirs(d, exist_ok=True)
+        _prune(d)
+        stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+        path = os.path.join(d, '%s-%d.log' % (stamp, os.getpid()))
+        return open(path, 'wb'), path
+    except (OSError, subprocess.SubprocessError) as e:
+        _err('无法写日志，本次不加 --log：%s' % e)
+        return None
+
+
+def _print_tail(path):
+    try:
+        with open(path, 'rb') as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - TAIL_BYTES))
+            tail = b''.join(f.read().splitlines(keepends=True)[-TAIL_LINES:])
+        sys.stdout.buffer.write(tail)
+        sys.stdout.buffer.flush()
+    except OSError:
+        pass
+
+
+def _run(cmd, env, log=None):
+    out = log[0] if log else None
+    if log:
+        _err('完整输出 ' + log[1])
+    try:
+        p = subprocess.Popen(cmd, env=env, stdout=out, stderr=out, preexec_fn=_die_with_parent)
+        for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+            signal.signal(sig, lambda s, _f: p.send_signal(s))
+        rc = p.wait()
+    finally:
+        if log:
+            log[0].close()
+    if log:
+        _print_tail(log[1])
+        _err('完整输出 ' + log[1])
+    return rc
 
 
 def cmd_test(ns):
@@ -82,8 +146,9 @@ def cmd_test(ns):
         _err('找不到命令 %s' % cmd[0])
         return 127
     env = dict(os.environ, **{HELD: '1'})
+    log = _open_log() if ns.log else None
     if os.environ.get(HELD):
-        return _run(cmd, env)
+        return _run(cmd, env, log)
     mem = os.environ.get('MINIPLAN_TEST_MEM') or MEM
     fd = _acquire(_slots())
     try:
@@ -94,7 +159,7 @@ def cmd_test(ns):
                    '-p', 'MemoryMax=' + mem, '-p', 'MemorySwapMax=0', '--'] + cmd
         else:
             _err('无法用 systemd-run 设内存上限 MemoryMax=%s，本次运行只限并发' % mem)
-        rc = _run(cmd, env)
+        rc = _run(cmd, env, log)
     finally:
         os.close(fd)
     if rc < 0:
