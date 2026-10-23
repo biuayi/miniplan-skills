@@ -398,5 +398,78 @@ class Static(unittest.TestCase):
         self.assertIsNone(re.search(r'\b[TP]\d+\b|阶段[一二三四五六七八九十\d]|附录', self.src))
 
 
+LOG = '/r/.git/miniplan/test-logs/20261023T010203Z-42.log'
+
+
+def gate_result(verdict, evidence, findings=()):
+    return {'verdict': verdict, 'evidence': evidence, 'findings': list(findings)}
+
+
+def ledger_line(out, prefix):
+    return [x for x in out['result']['ledger'] if x.startswith(prefix)][0]
+
+
+class GateEvidence(unittest.TestCase):
+    def test_weakened_tests_rule_only_with_builder(self):
+        out = sim(make_args([task(1), task(2, builder=False, owns=[])]))
+        v1 = call(out, 'T1 verifier')['prompt']
+        v2 = call(out, 'T2 verifier')['prompt']
+        for frag in ('测试是否被改弱', '原样引用被删或被放宽的那一行', 'GOAL 或 ACCEPTANCE 明确要求', 'git diff main...HEAD'):
+            self.assertIn(frag, v1)
+            self.assertNotIn(frag, v2)
+
+    def test_weakened_tests_rule_on_codex_too(self):
+        out = sim(make_args([task(1)], host='codex'))
+        self.assertIn('测试是否被改弱', call(out, 'T1 verifier')['prompt'])
+
+    def test_log_flag_only_outside_codex(self):
+        self.assertIn('test --log --', call(sim(make_args([task(1)])), 'T1 verifier')['prompt'])
+        self.assertNotIn('--log', call(sim(make_args([task(1)], host='codex')), 'T1 verifier')['prompt'])
+
+    def test_log_path_ends_complete_line(self):
+        ev = '跑了 CHECK\nminiplan test: 完整输出 ' + LOG + '\n全部通过'
+        out = sim(make_args([task(1)]), [{'label': 'T1 verifier', 'result': gate_result('pass', ev)}])
+        self.assertTrue(ledger_line(out, 'T1: complete').endswith('；完整输出 ' + LOG))
+
+    def test_last_log_path_wins(self):
+        first = '/r/.git/miniplan/test-logs/20261023T010203Z-1.log'
+        ev = 'miniplan test: 完整输出 ' + first + '\nminiplan test: 完整输出 ' + LOG
+        out = sim(make_args([task(1)]), [{'label': 'T1 verifier', 'result': gate_result('pass', ev)}])
+        self.assertTrue(ledger_line(out, 'T1: complete').endswith('；完整输出 ' + LOG))
+
+    def test_path_with_spaces(self):
+        spaced = '/home/u/my repo/.git/miniplan/test-logs/20261023T010203Z-7.log'
+        ev = 'miniplan test: 完整输出 ' + spaced
+        out = sim(make_args([task(1)]), [{'label': 'T1 verifier', 'result': gate_result('pass', ev)}])
+        self.assertTrue(ledger_line(out, 'T1: complete').endswith('；完整输出 ' + spaced))
+
+    def test_malformed_or_missing_path_leaves_line_alone(self):
+        for ev in ('没有日志', 'miniplan test: 完整输出 relative/x.log',
+                   'miniplan test: 完整输出 /r/.git/miniplan/test-logs/bad.log'):
+            out = sim(make_args([task(1)]), [{'label': 'T1 verifier', 'result': gate_result('pass', ev)}])
+            self.assertNotIn('；完整输出 ', ledger_line(out, 'T1: complete'), ev)
+
+    def test_log_path_reaches_failed_line_and_repair_prompt(self):
+        ev = 'miniplan test: 完整输出 ' + LOG
+        rules = [{'label': 'T1 verifier', 'result': gate_result('fail', ev, ['a.py:1 broken'])}]
+        out = sim(make_args([task(1)]), rules)
+        self.assertIn(LOG, call(out, 'T1 repair')['prompt'])
+        self.assertTrue(ledger_line(out, 'T1: failed').endswith('；完整输出 ' + LOG))
+
+
+class RepairPrompt(unittest.TestCase):
+    RULES = [{'label': 'T1 verifier', 'nth': 1, 'result': gate_result('fail', 'x', ['bad'])}]
+
+    def test_quote_failing_line_and_stay_on_findings(self):
+        p = call(sim(make_args([task(1)]), self.RULES), 'T1 repair')['prompt']
+        for frag in ('原样引用它所依据的失败输出那一行', '引用门禁 findings 的原句', '门禁没报问题的部分不动'):
+            self.assertIn(frag, p)
+
+    def test_codex_repair_quotes_failing_line(self):
+        p = call(sim(make_args([task(1)], host='codex'), self.RULES), 'T1 repair')['prompt']
+        self.assertIn('原样引用它所依据的失败输出那一行', p)
+        self.assertIn('门禁没报问题的部分不动', p)
+
+
 if __name__ == '__main__':
     unittest.main()
