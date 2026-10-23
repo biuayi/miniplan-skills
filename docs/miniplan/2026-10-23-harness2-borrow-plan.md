@@ -22,7 +22,7 @@ flowchart LR
   E1((①)) -->|"T1 测试闸门的 --log ✅"| E2((②))
   E1 -->|"T2 调度脚本的门禁、修复提示与账本日志路径 ✅"| E3((③))
   E1 -->|"T3 基础层、working、plans 文字与注入长度测试 ✅"| E4((④))
-  E1 -->|"T4 对照评测复测脚本 🔄"| E5((⑤))
+  E1 -->|"T4 对照评测复测脚本 ✅"| E5((⑤))
   E1 -->|"T5 待办与更新记录 ✅"| E6((⑥))
   E2 -.->|"虚工作"| E7((⑦))
   E3 -.->|"虚工作"| E7
@@ -531,3 +531,4 @@ T1: complete — 合并 7bc4dcf；verifier pass：test_gate.py 19 个用例 OK�
 T3: complete — 合并 465359f；verifier pass：14 条 CHECK 全部通过，test_skill_text.py 4 个用例 OK，注入长度复算 8827 字节（上限 9216），无清单外改动，测试未被改弱
 Ruling: T3 builder 为校验锚点在工作树里运行了 build.sh 并用 git checkout 恢复 codex/、qwen/，未提交，残留只有被忽略的 dist/，随工作树删除 — 违反了不运行 build.sh 的约束但无持久影响 — 若有遗漏，最终门禁核对 codex/qwen/dist/build.sh 未被改动
 T2: complete — 合并 7350a29；verifier pass：test_wf_sim.py 44 个用例 OK（新增 10 个与手册逐字一致），Codex 修复提示 grep 命中，S_GATE 未改，无日志路径时账本行与改前一致，测试未被改弱
+T4: complete — 合并 bde0364；verifier pass：test_eval_compare.py 12 个用例 OK（与手册逐字一致），--help 含 --max-cost-usd，维护说明两条 grep 命中，默认参数与判定规则与契约一致，假 claude 端到端演练退化/拒绝/一致三种出口正确
