@@ -1,5 +1,6 @@
 import fcntl
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -7,7 +8,7 @@ import tempfile
 import time
 import unittest
 
-from _util import CLI, run_cli
+from _util import CLI, make_repo, run_cli
 
 
 def systemd_user_available():
@@ -117,6 +118,93 @@ class GateTest(unittest.TestCase):
                     env=self.env(MINIPLAN_TEST_MEM='100M'))
         self.assertEqual(r.returncode, 137, r.stderr)
         self.assertIn('MemoryMax=100M', r.stderr)
+
+
+LOG_LINE = re.compile(r'^miniplan test: 完整输出 (.+)$', re.M)
+
+
+class GateLogTest(unittest.TestCase):
+    def setUp(self):
+        self.runtime = tempfile.mkdtemp(prefix='gate-')
+        self.logs = os.path.join(self.runtime, 'logs')
+        self.addCleanup(shutil.rmtree, self.runtime, True)
+
+    def env(self, **extra):
+        e = {'MINIPLAN_TEST_SLOT_DIR': self.runtime, 'MINIPLAN_TEST_HELD': None,
+             'MINIPLAN_TEST_SLOTS': None, 'MINIPLAN_TEST_MEM': None, 'MINIPLAN_TEST_LOG_DIR': self.logs}
+        e.update(extra)
+        return e
+
+    def test_log_holds_both_streams_and_prints_one_absolute_path_twice(self):
+        r = run_cli('test', '--log', '--', 'sh', '-c', 'echo out1; echo err1 >&2; exit 4', env=self.env())
+        self.assertEqual(r.returncode, 4, r.stderr)
+        paths = LOG_LINE.findall(r.stderr)
+        self.assertEqual(len(paths), 2, r.stderr)
+        self.assertEqual(paths[0], paths[1])
+        self.assertTrue(os.path.isabs(paths[0]))
+        self.assertRegex(os.path.basename(paths[0]), r'^\d{8}T\d{6}Z-\d+\.log$')
+        with open(paths[0], encoding='utf-8') as f:
+            body = f.read()
+        self.assertIn('out1', body)
+        self.assertIn('err1', body)
+        self.assertIn('out1', r.stdout)
+        self.assertIn('err1', r.stdout)
+
+    def test_stdout_is_the_last_40_lines(self):
+        r = run_cli('test', '--log', '--', 'seq', '1', '100', env=self.env())
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.split(), [str(i) for i in range(61, 101)])
+
+    def test_background_child_does_not_hold_the_wrapper(self):
+        t0 = time.monotonic()
+        r = run_cli('test', '--log', '--', 'sh', '-c', 'sleep 5 & echo started', env=self.env())
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertLess(time.monotonic() - t0, 4)
+
+    def test_unwritable_log_dir_falls_back_and_keeps_exit_code(self):
+        blocker = os.path.join(self.runtime, 'file')
+        open(blocker, 'w').close()
+        r = run_cli('test', '--log', '--', 'sh', '-c', 'echo hi; exit 5',
+                    env=self.env(MINIPLAN_TEST_LOG_DIR=os.path.join(blocker, 'logs')))
+        self.assertEqual(r.returncode, 5, r.stderr)
+        self.assertIn('hi', r.stdout)
+        self.assertEqual(LOG_LINE.findall(r.stderr), [])
+
+    def test_logs_older_than_30_days_are_pruned(self):
+        os.makedirs(self.logs)
+        old = os.path.join(self.logs, '20200101T000000Z-1.log')
+        new = os.path.join(self.logs, '20990101T000000Z-1.log')
+        for p in (old, new):
+            open(p, 'w').close()
+        os.utime(old, (time.time() - 31 * 86400,) * 2)
+        r = run_cli('test', '--log', '--', 'true', env=self.env())
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertFalse(os.path.exists(old))
+        self.assertTrue(os.path.exists(new))
+
+    def test_default_dir_is_absolute_git_common_dir(self):
+        repo = os.path.join(self.runtime, 'repo')
+        os.makedirs(repo)
+        make_repo(repo, {'sub/a.txt': 'x'})
+        r = run_cli('test', '--log', '--', 'true', env=self.env(MINIPLAN_TEST_LOG_DIR=None),
+                    cwd=os.path.join(repo, 'sub'))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        paths = LOG_LINE.findall(r.stderr)
+        want = os.path.join(os.path.realpath(repo), '.git', 'miniplan', 'test-logs') + os.sep
+        self.assertTrue(paths and os.path.realpath(paths[0]).startswith(want), r.stderr)
+
+    def test_outside_git_without_override_runs_without_log(self):
+        r = run_cli('test', '--log', '--', 'sh', '-c', 'exit 6', env=self.env(MINIPLAN_TEST_LOG_DIR=None),
+                    cwd=self.runtime)
+        self.assertEqual(r.returncode, 6, r.stderr)
+        self.assertEqual(LOG_LINE.findall(r.stderr), [])
+
+    def test_without_flag_output_is_unchanged_and_nothing_is_written(self):
+        r = run_cli('test', '--', 'sh', '-c', 'echo plain', env=self.env())
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout, 'plain\n')
+        self.assertEqual(LOG_LINE.findall(r.stderr), [])
+        self.assertFalse(os.path.exists(self.logs))
 
 
 if __name__ == '__main__':
