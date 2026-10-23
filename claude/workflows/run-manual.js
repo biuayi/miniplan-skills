@@ -242,6 +242,7 @@ function repairPrompt(st, slot, findings) {
     ...prefixRules(P, wt),
     '',
     '下面是原契约，末尾的 REPAIR ROUND 是门禁给出的问题；只修这些问题，修好后提交并把新 sha 填进 commit。',
+    '动手前先用一句话写出根因假设，放进 SUMMARY 开头。',
     '',
     '--- 契约原文 ---',
     contractFor(t, 'builder', P),
@@ -439,7 +440,7 @@ function findingsText(st, roles) {
     .join(' | ')
 }
 
-// 修复和冲突处理共用同一次修复机会；账本里只写一行 repair。
+// 门禁失败只修一次, 冲突处理过也算修过; 合并冲突总能处理一次; 账本只写一行 repair
 async function repairing(st, text, fn) {
   const before = spawned
   st.repaired = true
