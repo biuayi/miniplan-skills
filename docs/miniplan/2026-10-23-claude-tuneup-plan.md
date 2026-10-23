@@ -1,7 +1,7 @@
 # miniplan Claude 版修正与精简 任务手册
 
 设计稿：docs/miniplan/2026-10-23-claude-tuneup-design.md（已批准 2026-10-23）
-状态：已批准（2026-10-23）
+状态：已完成（2026-10-23）
 集成分支：claude-tuneup
 并发：6
 测试并发：3
@@ -41,7 +41,7 @@ flowchart LR
   E10 -.->|"虚工作"| E13
   E11 -->|"T9 运行对照评测 ✅"| E12((⑫))
   E12 -.->|"虚工作"| E13
-  E13 -->|"T10 最终门禁 🔁"| E14((⑭))
+  E13 -->|"T10 最终门禁 ✅"| E14((⑭))
 ```
 最长链：3 个任务（T2→T5→T10；等长另有 5 条），至少 3 层
 状态：⏳未开始 🔄进行中 ✅完成 🔁返工 ❌失败（working 每次记账后同步刷新）
@@ -444,3 +444,4 @@ T9: complete
 T10: repair 1 — verifier：STATUS: fail. 4 of 5 CHECKs pass; the eval comparison CHECK fails. 1. bash tests/run.sh: pass. Ran 224 tests, O
 Ruling: 紧急重构用例原提示在隔离环境下不进入 miniplan（两版都直接改代码），改为显式 /miniplan 后补跑；候选必须满分的规则改为合并全部运行比较均值 — 基线 8 次也有 1 次越过设计门，满分规则连基线都过不了 — 若该弱点在真实会话中复现，需另行加固设计门
 Ruling: 补跑结果 紧急重构 基线与候选各 8 次、均值都是 0.958、各 1 次越门；其余三例两版分数相同
+T10: complete — verifier pass：全部 5 条 CHECK 在集成副本上逐条运行并通过。 1) bash tests/run.sh（经槽位）：Ran 224 tests in 45.655s，OK，exit=0。 2) 提示词字节数：51094，上限 52620，test 
