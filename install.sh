@@ -17,6 +17,7 @@ install_claude() {
   need jq; need claude
   claude plugin marketplace add "$HERE"
   claude plugin install miniplan@miniplan-skills
+  claude plugin install plainwrite@miniplan-skills
   local old="$HOME/.claude/skills/miniplan"
   # earlier versions linked or copied the plugin there; it would load as a second plugin of the same name.
   # backups live outside ~/.claude/skills for the same reason.

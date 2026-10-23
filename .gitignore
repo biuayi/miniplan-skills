@@ -3,3 +3,4 @@ __pycache__/
 dist/
 tests/out/
 claude/evals/results/
+plainwrite/evals/results/

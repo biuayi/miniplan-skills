@@ -1,0 +1,1 @@
+{"name": "plainwrite", "version": "0.1.0", "description": "Bilingual (zh/en) plain-writing rules: injected at session start, a /plainwrite rewrite skill, and a Sonnet check on written Markdown and HTML", "author": {"name": "hertz"}}

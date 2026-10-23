@@ -1,0 +1,71 @@
+{
+  "description": "plainwrite: injects bilingual plain-writing rules and checks written Markdown and HTML with Sonnet",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -Rs '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:.}}' \"${CLAUDE_PLUGIN_ROOT}/core.md\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -Rs '{hookSpecificOutput:{hookEventName:\"SubagentStart\",additionalContext:.}}' \"${CLAUDE_PLUGIN_ROOT}/core.md\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "if": "Write(**/*.md)",
+            "prompt": "You are a writing checker. $ARGUMENTS is the hook input of one file write. Look only at the new text written by this call: for Write use tool_input.content, for Edit use tool_input.new_string.\n\nJudge it against this list:\n- more than one line-leading bold label (`**xx：**` or `**xx:**`)\n- customer-service pleasantries or sign-offs (希望对你有帮助, 如有问题请随时, Hope this helps, Let me know if)\n- aphoristic closing lines\n- teaser openers (让我们一起来看看, Let's dive into)\n- \"不是 X 而是 Y\" / \"not just X but Y\" used only to raise the tone\n- step-by-step narration of actions (我先, 接下来我将, I'll start by)\n- frequent filler phrases (值得注意的是, 总的来说, 赋能, 闭环, delve, testament)\n\nAlways return ok:true for: code blocks, commands, paths, quotations, table data, genuine correcting contrasts, well-founded qualifiers, and a single minor issue.\n\nIf it fails, return {\"ok\": false, \"reason\": \"...\"}: the reason quotes each offending sentence and says where to revise it. Do not give a full rewrite and do not ask to delete facts, numbers, or qualifiers.\nIf it passes, return {\"ok\": true}.",
+            "model": "claude-sonnet-5-5",
+            "continueOnBlock": true,
+            "timeout": 30,
+            "statusMessage": "plainwrite: checking prose"
+          },
+          {
+            "type": "prompt",
+            "if": "Edit(**/*.md)",
+            "prompt": "You are a writing checker. $ARGUMENTS is the hook input of one file write. Look only at the new text written by this call: for Write use tool_input.content, for Edit use tool_input.new_string.\n\nJudge it against this list:\n- more than one line-leading bold label (`**xx：**` or `**xx:**`)\n- customer-service pleasantries or sign-offs (希望对你有帮助, 如有问题请随时, Hope this helps, Let me know if)\n- aphoristic closing lines\n- teaser openers (让我们一起来看看, Let's dive into)\n- \"不是 X 而是 Y\" / \"not just X but Y\" used only to raise the tone\n- step-by-step narration of actions (我先, 接下来我将, I'll start by)\n- frequent filler phrases (值得注意的是, 总的来说, 赋能, 闭环, delve, testament)\n\nAlways return ok:true for: code blocks, commands, paths, quotations, table data, genuine correcting contrasts, well-founded qualifiers, and a single minor issue.\n\nIf it fails, return {\"ok\": false, \"reason\": \"...\"}: the reason quotes each offending sentence and says where to revise it. Do not give a full rewrite and do not ask to delete facts, numbers, or qualifiers.\nIf it passes, return {\"ok\": true}.",
+            "model": "claude-sonnet-5-5",
+            "continueOnBlock": true,
+            "timeout": 30,
+            "statusMessage": "plainwrite: checking prose"
+          },
+          {
+            "type": "prompt",
+            "if": "Write(**/*.html)",
+            "prompt": "You are a writing checker. $ARGUMENTS is the hook input of one file write. Look only at the new text written by this call: for Write use tool_input.content, for Edit use tool_input.new_string.\n\nJudge it against this list:\n- more than one line-leading bold label (`**xx：**` or `**xx:**`)\n- customer-service pleasantries or sign-offs (希望对你有帮助, 如有问题请随时, Hope this helps, Let me know if)\n- aphoristic closing lines\n- teaser openers (让我们一起来看看, Let's dive into)\n- \"不是 X 而是 Y\" / \"not just X but Y\" used only to raise the tone\n- step-by-step narration of actions (我先, 接下来我将, I'll start by)\n- frequent filler phrases (值得注意的是, 总的来说, 赋能, 闭环, delve, testament)\n\nAlways return ok:true for: code blocks, commands, paths, quotations, table data, genuine correcting contrasts, well-founded qualifiers, and a single minor issue.\n\nIf it fails, return {\"ok\": false, \"reason\": \"...\"}: the reason quotes each offending sentence and says where to revise it. Do not give a full rewrite and do not ask to delete facts, numbers, or qualifiers.\nIf it passes, return {\"ok\": true}.",
+            "model": "claude-sonnet-5-5",
+            "continueOnBlock": true,
+            "timeout": 30,
+            "statusMessage": "plainwrite: checking prose"
+          },
+          {
+            "type": "prompt",
+            "if": "Edit(**/*.html)",
+            "prompt": "You are a writing checker. $ARGUMENTS is the hook input of one file write. Look only at the new text written by this call: for Write use tool_input.content, for Edit use tool_input.new_string.\n\nJudge it against this list:\n- more than one line-leading bold label (`**xx：**` or `**xx:**`)\n- customer-service pleasantries or sign-offs (希望对你有帮助, 如有问题请随时, Hope this helps, Let me know if)\n- aphoristic closing lines\n- teaser openers (让我们一起来看看, Let's dive into)\n- \"不是 X 而是 Y\" / \"not just X but Y\" used only to raise the tone\n- step-by-step narration of actions (我先, 接下来我将, I'll start by)\n- frequent filler phrases (值得注意的是, 总的来说, 赋能, 闭环, delve, testament)\n\nAlways return ok:true for: code blocks, commands, paths, quotations, table data, genuine correcting contrasts, well-founded qualifiers, and a single minor issue.\n\nIf it fails, return {\"ok\": false, \"reason\": \"...\"}: the reason quotes each offending sentence and says where to revise it. Do not give a full rewrite and do not ask to delete facts, numbers, or qualifiers.\nIf it passes, return {\"ok\": true}.",
+            "model": "claude-sonnet-5-5",
+            "continueOnBlock": true,
+            "timeout": 30,
+            "statusMessage": "plainwrite: checking prose"
+          }
+        ]
+      }
+    ]
+  }
+}

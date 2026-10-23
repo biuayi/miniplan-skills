@@ -2,6 +2,7 @@
 
 ## 未发布
 
+- 新增 plainwrite 插件（0.1.0）：会话与子代理开头注入中英双语写作规则，`/plainwrite` 改写文字或文件，写入 md、html 后由 Sonnet 只判不改；中文清单基于 Humanizer-zh，英文基于 humanizer，附结构类规则与对照评测
 - Claude 插件版本升到 0.4.0
 - 新增对照评测 `claude/evals/`：4 个用例用内置 `claude plugin eval` 检查入口路由、设计与手册批准门、简单任务不误触发，只用确定性评分器；改提示词前后各跑一次比较分数，运行方法见 docs/maintaining.md
 - 会话开头注入的基础层去掉 Codex 专用段；基础层、入口、working、plans、brainstorming 与手册模板删去重复说明，judge 统一为仅在用户要求时启用
