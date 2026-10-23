@@ -29,7 +29,7 @@ flowchart LR
   E4 -.->|"虚工作"| E7
   E5 -.->|"虚工作"| E7
   E6 -.->|"虚工作"| E7
-  E7 -->|"T6 最终门禁 ⏳"| E8((⑧))
+  E7 -->|"T6 最终门禁 ✅"| E8((⑧))
   E7 -->|"T7 真实对照评测 ⏳"| E9((⑨))
   E8 -.->|"虚工作"| E10((⑩))
   E9 -.->|"虚工作"| E10
@@ -532,3 +532,4 @@ T3: complete — 合并 465359f；verifier pass：14 条 CHECK 全部通过，te
 Ruling: T3 builder 为校验锚点在工作树里运行了 build.sh 并用 git checkout 恢复 codex/、qwen/，未提交，残留只有被忽略的 dist/，随工作树删除 — 违反了不运行 build.sh 的约束但无持久影响 — 若有遗漏，最终门禁核对 codex/qwen/dist/build.sh 未被改动
 T2: complete — 合并 7350a29；verifier pass：test_wf_sim.py 44 个用例 OK（新增 10 个与手册逐字一致），Codex 修复提示 grep 命中，S_GATE 未改，无日志路径时账本行与改前一致，测试未被改弱
 T4: complete — 合并 bde0364；verifier pass：test_eval_compare.py 12 个用例 OK（与手册逐字一致），--help 含 --max-cost-usd，维护说明两条 grep 命中，默认参数与判定规则与契约一致，假 claude 端到端演练退化/拒绝/一致三种出口正确
+T6: complete — verifier pass：bash tests/run.sh 264 个测试 OK；临时副本 build.sh 成功（built dist/miniplan-v0.4.0.zip）；codex/qwen/dist/build.sh 无改动；完整输出 /home/hertz/Project/miniplan-skills/.git/miniplan/test-logs/20261023T173616Z-313972.log
