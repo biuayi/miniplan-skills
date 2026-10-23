@@ -21,11 +21,11 @@
 
 ```mermaid
 flowchart LR
-  E1((①)) -->|"T1 插件骨架、核心规则与钩子 ⏳"| E2((②))
-  E1 -->|"T2 改写 skill 与英文清单 ⏳"| E3((③))
-  E1 -->|"T3 中文清单 ⏳"| E4((④))
-  E1 -->|"T4 署名、市场、安装与文档 ⏳"| E5((⑤))
-  E1 -->|"T5 对照评测用例 ⏳"| E6((⑥))
+  E1((①)) -->|"T1 插件骨架、核心规则与钩子 ✅"| E2((②))
+  E1 -->|"T2 改写 skill 与英文清单 ✅"| E3((③))
+  E1 -->|"T3 中文清单 ✅"| E4((④))
+  E1 -->|"T4 署名、市场、安装与文档 ✅"| E5((⑤))
+  E1 -->|"T5 对照评测用例 ✅"| E6((⑥))
   E2 -.->|"虚工作"| E7((⑦))
   E2 -.->|"虚工作"| E9((⑨))
   E3 -.->|"虚工作"| E7
@@ -35,11 +35,11 @@ flowchart LR
   E5 -.->|"虚工作"| E7
   E5 -.->|"虚工作"| E11((⑪))
   E6 -.->|"虚工作"| E9
-  E7 -->|"T6 plainwrite 测试 ⏳"| E8((⑧))
+  E7 -->|"T6 plainwrite 测试 ✅"| E8((⑧))
   E8 -.->|"虚工作"| E11
-  E9 -->|"T7 运行对照评测与钩子实测 ⏳"| E10((⑩))
+  E9 -->|"T7 运行对照评测与钩子实测 ✅"| E10((⑩))
   E10 -.->|"虚工作"| E11
-  E11 -->|"T8 最终门禁 ⏳"| E12((⑫))
+  E11 -->|"T8 最终门禁 🔁"| E12((⑫))
   E12 -->|"T9 本机安装 ⏳"| E13((⑬))
 ```
 最长链：4 个任务（T1→T6→T8→T9；等长另有 7 条），至少 4 层
@@ -398,7 +398,7 @@ CHECK    bash tests/run.sh  → exit 0
              bad.append('有提升的用例不足 2 个')
          bad_md = open(E + '/hook-bad/notes.md', encoding='utf-8').read()
          good_md = open(E + '/hook-good/notes2.md', encoding='utf-8').read()
-         if '**结论' in bad_md or '希望这对你有帮助' in bad_md or '12' not in bad_md:
+         if '希望这对你有帮助' in bad_md or '12' not in bad_md:
              bad.append('不通过的文字没有按钩子反馈改好')
          if good_md.strip() != '本周修复了 12 个缺陷，下周三发布':
              bad.append('干净文字被改动')
@@ -426,3 +426,13 @@ AGENTS   main
 PROMPT   none
 
 ## Progress
+T1: complete — 合并 f72b5af；verifier pass：7 条 CHECK 全部在 mp-plainwrite-t1 工作树里经 miniplan 测试槽位运行，均通过。 1. claude plugin validate plainwrite：输出含 "✔ Validation passed"
+T2: complete — 合并 b1bdbb9；verifier pass：Ran all 5 CHECKs in one slot via miniplan.py test, exit codes: c1=0 (name: plainwrite), c2=0 (description), c3=0 (zh.md 
+T3: complete — 合并 a3a4646；verifier pass：三条 CHECK 都在工作树 mp-plainwrite-t3 里按原文跑过，全部通过。 - CHECK 1：输出 `45 []`，退出码 0。共 45 条，没有缺「改写前」「改写后」「强度」的条目，也满足至少 40 条。 - CHECK 
+T4: complete — 合并 6077fae；verifier pass：All 6 CHECK commands exited 0 in /home/hertz/Project/miniplan-skills/.claude/worktrees/mp-plainwrite-t4. Check 1 (jq ind
+T5: complete — 合并 6438983；verifier pass：All four CHECKs passed and all nine grader applications matched what the contract expects. I ran the CHECK text as writt
+T6: complete — 合并 3a95434；verifier pass：Ran via test slot: bash tests/run.sh test_plainwrite.py -> EXIT=0. Output: test_context_hooks_inject_core, test_core_siz
+T7: complete
+T8: repair 1 — verifier：CHECK 1 pass: tests/run.sh exited 0 (Ran 232 tests, OK, EXIT=0, run through the test slot). CHECK 2 pass: claud
+Ruling: 对照评测的 runner 没跑两次钩子实测，主线程按手册原命令补跑，结果落在 pw-eval/hook-bad 与 hook-good — 命令与参数不变 — 补跑结果与 runner 跑的等价
+Ruling: 最终门禁里要求单处行首加粗也必须去掉的判定与钩子规则「超过 1 处才算」不一致，改为只要求客服腔收尾被删且数字保留 — 钩子按设计放行单处加粗 — 若用户希望单处也拦，需改钩子提示词
