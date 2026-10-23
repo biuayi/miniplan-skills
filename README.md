@@ -22,10 +22,11 @@ v0.3.0　｜　[CHANGELOG](CHANGELOG.md)
 ```bash
 claude plugin marketplace add biuayi/miniplan-skills
 claude plugin install miniplan@miniplan-skills
+claude plugin install plainwrite@miniplan-skills   # 可选：中英双语写作规则与 /plainwrite 改写
 ```
 
 验证：`claude plugin details miniplan` 应列出 5 个 skill、8 个 agent 和 hooks。
-更新：`claude plugin marketplace update miniplan-skills && claude plugin update miniplan@miniplan-skills`
+更新：`claude plugin marketplace update miniplan-skills && claude plugin update miniplan@miniplan-skills && claude plugin update plainwrite@miniplan-skills`
 
 ### Codex
 

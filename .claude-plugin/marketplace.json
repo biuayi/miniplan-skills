@@ -1,12 +1,17 @@
 {
   "name": "miniplan-skills",
-  "description": "miniplan for Claude Code: clarify, plan, and run multi-agent work through fixed roles.",
+  "description": "miniplan and plainwrite for Claude Code: multi-agent planning, and bilingual plain-writing rules.",
   "owner": { "name": "hertz" },
   "plugins": [
     {
       "name": "miniplan",
       "source": "./claude",
       "description": "Entry point /miniplan <request>: brainstorming, plans, and working skills with routed agent roles and budget hooks."
+    },
+    {
+      "name": "plainwrite",
+      "source": "./plainwrite",
+      "description": "Bilingual (zh/en) plain-writing rules, a /plainwrite rewrite skill, and a Sonnet check on written Markdown and HTML."
     }
   ]
 }
