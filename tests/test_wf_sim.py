@@ -358,6 +358,15 @@ class Misc(unittest.TestCase):
         self.assertEqual(by_id(out)['T1']['status'], 'complete')
         self.assertRegex(out['result']['ledger'][0], r'^T1: complete — verifier pass：')
 
+    def test_no_builder_gate_fail_is_not_repaired(self):
+        rules = [{'label': 'T1 verifier', 'result': {'verdict': 'fail', 'evidence': 'x', 'findings': ['bad']}}]
+        out = sim(make_args([task(1, builder=False, owns=[])]), rules)
+        self.assertEqual(labels(out), ['T1 verifier'])
+        t = by_id(out)['T1']
+        self.assertEqual(t['status'], 'failed')
+        self.assertFalse(t['repair'])
+        self.assertTrue(any(x.startswith('T1: failed') for x in out['result']['ledger']))
+
 
 class Small(unittest.TestCase):
     def test_contract_fetched_by_agent(self):

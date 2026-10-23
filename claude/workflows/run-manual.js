@@ -487,7 +487,7 @@ async function gateStage(st, slot, roles) {
 
     if (!fails.length) return
     const findings = findingsText(st, fails)
-    if (st.repaired) throw new Stop('failed', 'gate ' + fails.join(','), findings)
+    if (st.repaired || !t.builder) throw new Stop('failed', 'gate ' + fails.join(','), findings)
 
     await repairing(st, findings, async () => {
       const label = t.id + ' repair'
