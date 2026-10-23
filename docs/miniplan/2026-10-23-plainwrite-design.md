@@ -1,6 +1,6 @@
 # plainwrite 中英双语去 AI 味 设计稿
 
-日期：2026-10-23。路径：Architectural。状态：已批准（2026-10-23）。
+日期：2026-10-23。路径：Architectural。状态：已完成（2026-10-23）。
 
 ## Goal
 装上 plainwrite 插件后，Claude 自己写的回复、文档与提交信息少了 AI 腔，写入的 md 与 html 文档经 Sonnet 检查后由 Claude 自己改；`/plainwrite` 能把给定的中英文文字或文件改写得像人写的，不增删事实；对照评测给出装与不装的差值。

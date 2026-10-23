@@ -1,7 +1,7 @@
 # plainwrite 中英双语去 AI 味 任务手册
 
 设计稿：docs/miniplan/2026-10-23-plainwrite-design.md（已批准 2026-10-23）
-状态：已批准（2026-10-23）
+状态：已完成（2026-10-23）
 集成分支：plainwrite
 并发：6
 测试并发：3
@@ -39,8 +39,8 @@ flowchart LR
   E8 -.->|"虚工作"| E11
   E9 -->|"T7 运行对照评测与钩子实测 ✅"| E10((⑩))
   E10 -.->|"虚工作"| E11
-  E11 -->|"T8 最终门禁 🔁"| E12((⑫))
-  E12 -->|"T9 本机安装 ⏳"| E13((⑬))
+  E11 -->|"T8 最终门禁 ✅"| E12((⑫))
+  E12 -->|"T9 本机安装 ✅"| E13((⑬))
 ```
 最长链：4 个任务（T1→T6→T8→T9；等长另有 7 条），至少 4 层
 状态：⏳未开始 🔄进行中 ✅完成 🔁返工 ❌失败（working 每次记账后同步刷新）
@@ -436,3 +436,5 @@ T7: complete
 T8: repair 1 — verifier：CHECK 1 pass: tests/run.sh exited 0 (Ran 232 tests, OK, EXIT=0, run through the test slot). CHECK 2 pass: claud
 Ruling: 对照评测的 runner 没跑两次钩子实测，主线程按手册原命令补跑，结果落在 pw-eval/hook-bad 与 hook-good — 命令与参数不变 — 补跑结果与 runner 跑的等价
 Ruling: 最终门禁里要求单处行首加粗也必须去掉的判定与钩子规则「超过 1 处才算」不一致，改为只要求客服腔收尾被删且数字保留 — 钩子按设计放行单处加粗 — 若用户希望单处也拦，需改钩子提示词
+T8: complete — verifier pass：三条 CHECK 都已在集成副本上独立运行并通过。 1. `bash tests/run.sh`（经测试槽位运行）：Ran 232 tests in 46.907s，OK，EXIT=0。 2. `claude plugin validate
+T9: complete — claude plugin install plainwrite@miniplan-skills 成功，0.1.0，从仓库目录原地加载
