@@ -19,7 +19,7 @@
 
 ```mermaid
 flowchart LR
-  E1((①)) -->|"T1 测试闸门的 --log 🔄"| E2((②))
+  E1((①)) -->|"T1 测试闸门的 --log ✅"| E2((②))
   E1 -->|"T2 调度脚本的门禁、修复提示与账本日志路径 🔄"| E3((③))
   E1 -->|"T3 基础层、working、plans 文字与注入长度测试 🔄"| E4((④))
   E1 -->|"T4 对照评测复测脚本 🔄"| E5((⑤))
@@ -527,3 +527,4 @@ PROMPT   none
 ## Progress
 Ruling: 用逐个派发执行，不用后台工作流 — 工作流工具要用户明确说要用才能调，用户批准的是手册与预算 17；已 grant 17 — 代价是合并与门禁派发由主线程手动做
 T5: complete — 主线程完成，CHECK 两条通过，提交 551c1d1
+T1: complete — 合并 7bc4dcf；verifier pass：test_gate.py 19 个用例 OK（新增 8 个与手册逐字一致），--help 含 --log，测试未被改弱，不加 --log 时仍继承标准输入输出
