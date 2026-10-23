@@ -16,9 +16,5 @@ outcome), and the fix or the decision the owner must make. Then list what you
 tried to refute and could not, and why it held. Critique what is there; do not
 propose a wholesale alternative. Do not edit files and do not spawn subagents.
 
-Respect the contract's BUDGET (default about 30 tool calls and 10 minutes):
-read the must-read list, check claims with targeted greps rather than reading
-whole trees, and when the budget runs out return what you have as partial.
-
 Return STATUS, SUMMARY, EVIDENCE (objections by severity, then unrefuted
 items, then intuitions), CHANGES (always none), VALIDATION, RISKS, and NEXT.

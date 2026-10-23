@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: Use when a request is broad, loosely specified, or spans several modules or steps without explicit acceptance criteria — wording like 整体/全面/整理/梳理/盘点/调研/优化一下/重构一下/把X做起来/接入一下/有哪些能力, or a multi-part ask whose boundaries and "done" are fuzzy. Splits the problem into decisions, gets each decision explicitly from the user, writes a design draft, has a critic falsify it, and stops for approval before any implementation. Not for single-file fixes, direct questions, or requests that already state scope and acceptance. Ends by handing off to miniplan:plans.
+description: Stage one of miniplan, entered from miniplan:miniplan for a new topic, or when the user explicitly asks to brainstorm or design something before building it. Splits the problem into decisions, gets each decision explicitly from the user, writes a design draft, has a critic falsify it, and stops for approval before any implementation. Not for single-file fixes, direct questions, or requests that already state scope and acceptance. Ends by handing off to miniplan:plans.
 ---
 
 # Brainstorming
@@ -13,8 +13,9 @@ from `miniplan:agents`.
 <HARD-GATE>
 No implementation action (edit, side-effecting command, `builder` spawn,
 invoking `miniplan:plans`) until the user has explicitly approved the design.
-Silence, an unanswered question, or "差不多吧" is not approval. This holds on
-every path below without exception.
+Silence, an unanswered question, and vague assent (差不多吧, 你看着办, 都行,
+听起来不错, 那就开始吧) are not approval; re-ask with two concrete options:
+approve, or change what. This holds on every path below without exception.
 </HARD-GATE>
 
 ## Phase 0: Triage (one line to the user)
@@ -107,9 +108,5 @@ drop sections, write "none" where that is the truth.
 
 ## Anti-patterns
 
-- Asking what the code answers, or six questions in one message.
-- Options without a recommendation; a recommendation without a reason.
 - Skipping the falsifier because the design "feels solid".
-- Adjudicating objections by deleting them.
 - Treating an answered AskUserQuestion as approval of the whole design.
-- Starting `miniplan:plans` before the approval words exist in the transcript.

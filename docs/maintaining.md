@@ -35,6 +35,24 @@ bash tests/run.sh   # 测试
 2. `./build.sh`，提交后推送到 `main`。
 3. 推送后，`qwen-extension` 分支由 Action 自动同步；第一次可以在 Actions 页面手动运行 qwen-extension。
 
+## 对照评测
+
+改提示词后，用 `claude/evals/` 下的 4 个用例验证入口路由、设计批准门、手册批准门没有退化，简单任务也不会被误触发。评分器全部是确定性的，不调用模型打分。
+
+```bash
+claude plugin eval claude --ablation none --model opus --allow-tools Write Edit --scaffold --trust-plugin --no-publish --threshold 0 --json <结果.json> --output-dir <目录> --max-cost-usd <上限>
+```
+
+对照方法：
+
+1. `git archive <基线提交> claude | tar -x -C <临时目录>`，取出基线版本。
+2. 把当前的 `claude/evals` 复制到临时目录的 `claude/` 下。
+3. 两边各跑一次上面的命令，比较结果 JSON 里 `cases[].aggregates.score`。
+
+- 默认会把报告发布到 claude.ai，所以必须带 `--no-publish`。
+- 每次运行都计入套餐额度，用 `--max-cost-usd` 设上限。
+- 结果写在 `claude/evals/results/` 时已被 `.gitignore` 忽略。
+
 ## 已知限制
 
 - agent 定义只在会话启动时加载，装完或更新后要开新会话。

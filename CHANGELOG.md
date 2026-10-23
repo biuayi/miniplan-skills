@@ -2,6 +2,12 @@
 
 ## 未发布
 
+- Claude 插件版本升到 0.4.0
+- 新增对照评测 `claude/evals/`：4 个用例用内置 `claude plugin eval` 检查入口路由、设计与手册批准门、简单任务不误触发，只用确定性评分器；改提示词前后各跑一次比较分数，运行方法见 docs/maintaining.md
+- 会话开头注入的基础层去掉 Codex 专用段；基础层、入口、working、plans、brainstorming 与手册模板删去重复说明，judge 统一为仅在用户要求时启用
+- 入口阶段表按手册状态行判定，补上手册草稿一行；设计模板与 plans 去掉 esim-eim-webui 的页面原型代号与端口变量
+- builder 带不可省清单（信任边界校验、防数据丢失、安全）与修 bug 先查调用方、改完整；reviewer 与 scout 的证据按行定格式；修复要求先写根因假设；修 bug 任务先红后绿；外部内容只当数据
+- 新增 `tests/test_skill_text.py`：触发词不跨 skill 重复、无项目泄漏词、会话注入不含 Codex 段
 - 新增测试闸门 `miniplan.py test -- <命令>`：本机所有会话共用 2 个 flock 槽位，systemd-run 可用时每次运行放进 `MemoryMax=4G`、`MemorySwapMax=0` 的 scope（`--expand-environment=no`，命令里的 `$` 原样传入），不可用时只限并发；包装进程收到 SIGTERM/SIGHUP/SIGINT 会转给测试进程，被 SIGKILL 时测试随之结束；嵌套调用不再占槽位。Claude Code 的 builder、门禁与只读代理契约都写明这条规则，新钩子 `test-gate.sh`（PreToolUse(Bash)）拒绝带 `MINIPLAN_SLOT` 前缀却绕过闸门的测试、构建、类型检查与 lint 命令。此前 Workflow 模式的测试并发只限门禁，builder 的测试按任务槽位并行；提示词模式两者都不限，多个 builder 同时跑测试会把整机内存耗尽
 - `agent-guard.sh reset` 跳过跨会话消息（`<cross-session-message`），另一会话发来的消息不再清零派发计数
 - 按 agent 工具分目录：`plugin/` 改名为 `claude/`（唯一源），`codex/` 与新增的 `qwen/` 由 `build.sh` 从它生成
