@@ -58,3 +58,13 @@ class SkillText(unittest.TestCase):
         self.assertIn('## Routing (Claude Code)', context)
         self.assertNotIn('${CLAUDE_PLUGIN_ROOT}', context)
         self.assertIn(CLAUDE, context)
+
+    def test_session_context_size_cap(self):
+        with open(os.path.join(CLAUDE, 'hooks', 'hooks.json'), encoding='utf-8') as f:
+            command = json.load(f)['hooks']['SessionStart'][0]['hooks'][0]['command']
+        r = subprocess.run(['bash', '-c', command], capture_output=True, text=True, encoding='utf-8',
+                           env=dict(os.environ, CLAUDE_PLUGIN_ROOT=CLAUDE), timeout=30)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        context = json.loads(r.stdout)['hookSpecificOutput']['additionalContext']
+        size = len(context.replace(CLAUDE, '${CLAUDE_PLUGIN_ROOT}').encode('utf-8'))
+        self.assertLessEqual(size, 9216)

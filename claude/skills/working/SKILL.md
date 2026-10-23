@@ -174,9 +174,14 @@ Used for old-format manuals and wherever a scripted run is unavailable.
   command. The gate receives the CHECK text and the design's A<i>, not the
   builder's summary. Verdict per CHECK: pass / fail /
   not verifiable.
+- For a task with a builder, the gate also checks that tests were not weakened:
+  a test body given in the CHECK is compared with the worktree, and in the
+  task's diff against the integration branch a removed or loosened assertion or
+  a new skip marker is a fail that quotes the removed line, unless the
+  contract's GOAL or ACCEPTANCE asks for it.
 - Ledger on the gate's evidence. After merging, spot-check the merge diff. If
   you and the gate disagree, the report says so; do not pick one silently.
-- Fail: one repair round. Its contract carries the failing command and its output, and the builder states a one-line root-cause hypothesis before editing. Re-gate the fix only. A second fail goes to the user. `judge` only when the user asks.
+- Fail: one repair round. Its contract carries the failing command and its output, and the builder states a one-line root-cause hypothesis before editing, quoting the line of failing output it rests on (from the gate's log when one is named, otherwise the gate's finding verbatim), and changes only code tied to the gate's findings. Re-gate the fix only. A second fail goes to the user. `judge` only when the user asks.
 - A child returning `blocked` or `partial` with a question: answer from the
   design or manual and respawn once with the answer; otherwise carry it to the
   user.
@@ -192,6 +197,9 @@ Used for old-format manuals and wherever a scripted run is unavailable.
   commands share one slot as `test -- bash -c '<cmd1> && <cmd2>'`. A
   PreToolUse hook denies a command carrying the `MINIPLAN_SLOT` prefix that
   runs tests without it.
+- Gates run CHECK commands as `test --log -- <command>`: the full output goes
+  to a log file whose path is printed; the gate puts that path in its evidence,
+  and the ledger line points to it.
 <!-- /host -->
 - When the project provides a command that selects tests from the change set
   (for example `npm run test:affected`), builders and per-task gates run that
