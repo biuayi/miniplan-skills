@@ -21,7 +21,7 @@
 flowchart LR
   E1((①)) -->|"T1 测试闸门的 --log ✅"| E2((②))
   E1 -->|"T2 调度脚本的门禁、修复提示与账本日志路径 🔄"| E3((③))
-  E1 -->|"T3 基础层、working、plans 文字与注入长度测试 🔄"| E4((④))
+  E1 -->|"T3 基础层、working、plans 文字与注入长度测试 ✅"| E4((④))
   E1 -->|"T4 对照评测复测脚本 🔄"| E5((⑤))
   E1 -->|"T5 待办与更新记录 ✅"| E6((⑥))
   E2 -.->|"虚工作"| E7((⑦))
@@ -528,3 +528,5 @@ PROMPT   none
 Ruling: 用逐个派发执行，不用后台工作流 — 工作流工具要用户明确说要用才能调，用户批准的是手册与预算 17；已 grant 17 — 代价是合并与门禁派发由主线程手动做
 T5: complete — 主线程完成，CHECK 两条通过，提交 551c1d1
 T1: complete — 合并 7bc4dcf；verifier pass：test_gate.py 19 个用例 OK（新增 8 个与手册逐字一致），--help 含 --log，测试未被改弱，不加 --log 时仍继承标准输入输出
+T3: complete — 合并 465359f；verifier pass：14 条 CHECK 全部通过，test_skill_text.py 4 个用例 OK，注入长度复算 8827 字节（上限 9216），无清单外改动，测试未被改弱
+Ruling: T3 builder 为校验锚点在工作树里运行了 build.sh 并用 git checkout 恢复 codex/、qwen/，未提交，残留只有被忽略的 dist/，随工作树删除 — 违反了不运行 build.sh 的约束但无持久影响 — 若有遗漏，最终门禁核对 codex/qwen/dist/build.sh 未被改动
