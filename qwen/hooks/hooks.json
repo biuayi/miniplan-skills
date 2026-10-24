@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -Rs --arg root \"$HOME/.qwen/extensions/miniplan\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"# miniplan:agents (auto-loaded at session start)\\n\\n\" + (split(\"${\" + \"CLAUDE_PLUGIN_ROOT}\") | join($root)))}}' \"$HOME/.qwen/extensions/miniplan/skills/agents/SKILL.md\"",
+            "command": "jq -Rs --arg root \"$HOME/.qwen/extensions/miniplan\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"# miniplan:agents (auto-loaded at session start)\\n\\n\" + (gsub(\"<!-- host.codex[^\\n]*\\n(.*\\n)*?-->\\n\"; \"\") | split(\"${\" + \"CLAUDE_PLUGIN_ROOT}\") | join($root)))}}' \"$HOME/.qwen/extensions/miniplan/skills/agents/SKILL.md\"",
             "timeout": 10
           }
         ]

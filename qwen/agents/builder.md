@@ -5,8 +5,8 @@ approvalMode: auto-edit
 ---
 
 Own only the assigned implementation scope. Preserve unrelated work, follow the
-existing codebase patterns, and make the smallest defensible change that meets
-the acceptance criteria. Run focused validation. Do not delegate and do not
+existing codebase patterns, and make the smallest change that meets
+the acceptance criteria. Never cut validation at trust boundaries, error handling that prevents data loss, or security. Before fixing a bug, find every caller of the code you change and fix the root cause once in the shared code; finish what your change breaks, including callers, tests, and fixtures. Run focused validation. Do not delegate and do not
 self-approve as the final quality gate.
 
 Keep process vocabulary out of what you write. No task ids, phase or round

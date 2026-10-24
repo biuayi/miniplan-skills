@@ -103,6 +103,14 @@ const shq = (s) => "'" + String(s).replace(/'/g, "'\\''") + "'"
 const q = (s) => (/^[\w@%+=:,./-]+$/.test(String(s)) ? String(s) : shq(s))
 const asText = (x) => (typeof x === 'string' ? x : JSON.stringify(x))
 
+// 门禁原始证据与 findings 里最后一个测试完整输出日志路径, 没有返回空串
+function logPath(g) {
+  const text = [g.evidence].concat((g.findings || []).map(asText)).map((x) => String(x == null ? '' : x)).join('\n')
+  const found = text.match(/miniplan test: 完整输出 (\/.*?\/miniplan\/test-logs\/\d{8}T\d{6}Z-\d+\.log)/g) || []
+  return found.length ? found[found.length - 1].replace('miniplan test: 完整输出 ', '') : ''
+}
+const logTail = (g) => (g && g.log ? '；完整输出 ' + g.log : '')
+
 // 每条 Bash 命令的固定前缀。
 function prefix(dir, slot) {
   let p = 'cd ' + q(dir) + ' && export MINIPLAN_SLOT=' + slot
@@ -230,7 +238,7 @@ function builderPrompt(st, slot, notes) {
 }
 
 function repairPrompt(st, slot, findings) {
-  if (A.host === 'codex') return builderPrompt(st, slot, '只修复下列门禁问题: ' + findings)
+  if (A.host === 'codex') return builderPrompt(st, slot, '只修复下列门禁问题, 动手前先写一句根因假设并原样引用它所依据的失败输出那一行(没有完整输出时引用门禁问题原句), 门禁没报问题的部分不动: ' + findings)
   const t = st.t
   const wt = wtPath(t)
   const P = prefix(wt, slot)
@@ -242,6 +250,7 @@ function repairPrompt(st, slot, findings) {
     ...prefixRules(P, wt),
     '',
     '下面是原契约，末尾的 REPAIR ROUND 是门禁给出的问题；只修这些问题，修好后提交并把新 sha 填进 commit。',
+    '动手前先写一句根因假设，放进 SUMMARY 开头，并原样引用它所依据的失败输出那一行：门禁问题里带完整输出日志路径时从日志里摘，没有时引用门禁 findings 的原句。只改与这些问题相关的代码，门禁没报问题的部分不动。',
     '',
     '--- 契约原文 ---',
     contractFor(t, 'builder', P),
@@ -295,6 +304,15 @@ function gatePrompt(st, role, slot, rerun) {
     ...prefixRules(P, dir),
     '',
     ...VERDICTS,
+    '',
+    ...(t.builder
+      ? [
+          '有 builder 的任务另查测试是否被改弱：CHECK 里给了测试代码时，先比对工作树里的测试与 CHECK 原文；再看 `git diff ' + A.integration + '...HEAD` 里的测试文件。删除或放宽已有断言、新增跳过或只跑部分用例的标记，判 fail，并在 findings 里原样引用被删或被放宽的那一行；契约的 GOAL 或 ACCEPTANCE 明确要求删除或替换这些测试时除外。',
+        ]
+      : []),
+    ...(A.host !== 'codex'
+      ? ['跑 CHECK 里的命令时用 `' + P + ' && python3 -I ' + q(A.cli) + ' test --log -- <命令>`；evidence 里原样带上输出里的 `miniplan test: 完整输出 <路径>` 那一行。']
+      : []),
     '',
     '--- 契约原文 ---',
     contractFor(t, role, P),
@@ -432,17 +450,17 @@ async function runGate(st, role, slot, rerun) {
   return t.builder ? body() : mergeLock.read(body)
 }
 
-function findingsText(st, roles) {
+function findingsText(st, roles, withLog) {
   return roles
     .map((role) => {
       const g = st.gate[role] || {}
       const fs = (g.findings || []).map(asText).join('；')
-      return role + '：' + oneLine(g.evidence) + (fs ? '；' + fs : '')
+      return role + '：' + oneLine(g.evidence) + (fs ? '；' + fs : '') + (withLog ? logTail(g) : '')
     })
     .join(' | ')
 }
 
-// 修复和冲突处理共用同一次修复机会；账本里只写一行 repair。
+// 门禁失败只修一次, 冲突处理过也算修过; 合并冲突总能处理一次; 账本只写一行 repair
 async function repairing(st, text, fn) {
   const before = spawned
   st.repaired = true
@@ -470,7 +488,7 @@ async function gateStage(st, slot, roles) {
     let notVerifiable = null
     for (const { role, g } of rs) {
       const v = normVerdict(g.verdict)
-      st.gate[role] = { verdict: v, evidence: oneLine(g.evidence), findings: g.findings || [] }
+      st.gate[role] = { verdict: v, evidence: oneLine(g.evidence), findings: g.findings || [], log: logPath(g) }
       if (v === 'fail') fails.push(role)
       else if (v === 'infra') infra.push(role)
       else if (v === 'not_verifiable' && !notVerifiable) notVerifiable = role
@@ -481,19 +499,19 @@ async function gateStage(st, slot, roles) {
     for (const role of infra) {
       const [{ g }] = await runAll([async () => ({ role, g: await runGate(st, role, slot, true) })])
       const v = normVerdict(g.verdict)
-      st.gate[role] = { verdict: v, evidence: oneLine(g.evidence), findings: g.findings || [] }
+      st.gate[role] = { verdict: v, evidence: oneLine(g.evidence), findings: g.findings || [], log: logPath(g) }
       if (v === 'infra') throw new Stop('blocked', 'infra', role + '：' + st.gate[role].evidence)
       if (v === 'not_verifiable') throw new Stop('blocked', 'not-verifiable', role + '：' + st.gate[role].evidence)
       if (v === 'fail') fails.push(role)
     }
 
     if (!fails.length) return
-    const findings = findingsText(st, fails)
-    if (st.repaired) throw new Stop('failed', 'gate ' + fails.join(','), findings)
+    const findings = findingsText(st, fails, false)
+    if (st.repaired || !t.builder) throw new Stop('failed', 'gate ' + fails.join(','), findings)
 
     await repairing(st, findings, async () => {
       const label = t.id + ' repair'
-      const r = await call(repairPrompt(st, slot, findings), label, 'repair', S_BUILDER, 'builder')
+      const r = await call(repairPrompt(st, slot, findingsText(st, fails, true)), label, 'repair', S_BUILDER, 'builder')
       builderOk(r, label)
       st.commit = r.commit || st.commit
     })
@@ -539,7 +557,7 @@ function completeLine(st) {
   if (st.mergeCommit) parts.push('合并 ' + st.mergeCommit.slice(0, 7))
   for (const role of t.gates) {
     const g = st.gate[role]
-    if (g && g.verdict === 'pass') parts.push(role + ' pass：' + clip(g.evidence, 120))
+    if (g && g.verdict === 'pass') parts.push(role + ' pass：' + clip(g.evidence, 120) + logTail(g))
   }
   return t.id + ': complete' + (parts.length ? ' — ' + parts.join('；') : '')
 }
@@ -565,7 +583,7 @@ function summarize(st, status, reason, evidence) {
     st.lines.push(completeLine(st))
     evidence = evidence || Object.keys(st.gate).map((r) => r + '：' + st.gate[r].evidence).join(' | ')
   } else if (status === 'failed') {
-    st.lines.push(st.t.id + ': failed — ' + reason + '：' + clip(evidence, 120))
+    st.lines.push(st.t.id + ': failed — ' + reason + '：' + clip(evidence, 120) + Object.keys(st.gate).map((r) => logTail(st.gate[r])).join(''))
   }
   log(st.t.id + ' ' + status + (reason ? ' (' + reason + ')' : ''))
   return {

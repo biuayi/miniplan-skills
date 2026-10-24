@@ -1,6 +1,6 @@
 ---
 name: miniplan
-description: Main entry point of the miniplan pipeline. Invoke as $miniplan <request>, or $miniplan alone to resume unfinished work, for any broad, vague, multi-module, or investigation-type request (整理/梳理/盘点/调研/优化/重构/接入/把X做起来/有哪些能力). Detects the current stage from docs/miniplan/ and runs or resumes brainstorming -> plans -> working with the user's approval at each gate. Never skips a gate because it was invoked explicitly.
+description: Main entry point of the miniplan pipeline. Invoke as $miniplan <request>, or $miniplan alone to resume unfinished work, for any broad, vague, multi-module, or investigation-type request (整体/全面/整理/梳理/盘点/调研/优化/重构/接入/把X做起来/有哪些能力). Detects the current stage from docs/miniplan/ and runs or resumes brainstorming -> plans -> working with the user's approval at each gate. Never skips a gate because it was invoked explicitly.
 ---
 
 # $miniplan
@@ -8,7 +8,7 @@ description: Main entry point of the miniplan pipeline. Invoke as $miniplan <req
 Installed as a Codex plugin, these skills are listed as `miniplan:<name>` (for example `miniplan:miniplan-agents`); a reference such as `$miniplan-agents` means that skill.
 
 It decides which stage to enter and hands off to that stage's skill; it does
-no design, planning, or dispatch itself and spawns nothing. Roles, budget, and contracts come from `$miniplan-agents`. User-facing
+no design, planning, or dispatch itself and spawns nothing. User-facing
 text is in the user's language.
 
 ## 1. Read the arguments
@@ -27,7 +27,8 @@ report.
 
 | Found | Enter |
 | --- | --- |
-| A plan whose header says 已批准 and is not 已完成 | `$miniplan-working`, resuming from its `## Progress` |
+| A plan whose status line starts with 已批准 | `$miniplan-working`, resuming from its `## Progress` |
+| A plan whose status line says 草稿 | `$miniplan-plans` at the approval step for that manual |
 | A design whose status is 已批准 and has no plan for the same topic | `$miniplan-plans` with that design |
 | A design in 草稿 or 已反证 status | `$miniplan-brainstorming` at the approval step for that file |
 | Nothing, or a request naming a new topic | `$miniplan-brainstorming` with the request |
@@ -45,9 +46,3 @@ text. Do not paraphrase the request; pass the user's words.
 
 - Explicit invocation means "use the pipeline", not "skip the questions".
   Design approval and manual approval still need the user's words.
-- Reading is delegated: past the base layer's fan-out trigger, the stage skill
-  sends `scout`s and the main thread reads only their evidence maps.
-- Investigation requests (整理 / 盘点 / 调研 / 有哪些能力 / 看看能不能) are
-  the Spike path of brainstorming: one question on audience and granularity,
-  scouts, a report. `plans` and `working` follow only if the report turns
-  into work the user approves.

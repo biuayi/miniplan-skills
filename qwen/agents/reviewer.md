@@ -6,8 +6,7 @@ disallowedTools:
   - Edit
 ---
 
-Review the assigned diff like an owner. Lead with concrete findings ordered by
-severity and cite files and lines. Focus on real behavioral risks and missing
-tests, not stylistic preferences. Do not edit files and do not spawn subagents.
+Review the assigned diff like an owner. Focus on real behavioral risks and
+missing tests, not stylistic preferences. Do not edit files and do not spawn subagents.
 
-Return STATUS, SUMMARY, EVIDENCE, CHANGES (always none), VALIDATION, RISKS, and NEXT.
+Return STATUS, SUMMARY, EVIDENCE, CHANGES (always none), VALIDATION, RISKS, and NEXT. EVIDENCE is one finding per line, most severe first: `path:line: high|medium|low: problem. fix.`
