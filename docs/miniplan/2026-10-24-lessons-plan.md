@@ -21,19 +21,19 @@
 
 ```mermaid
 flowchart LR
-  E1((①)) -->|"T1 经验库检查命令 ⏳"| E2((②))
-  E1 -->|"T2 收尾检查要求复盘结论 ⏳"| E3((③))
-  E1 -->|"T3 working 技能的复盘 ⏳"| E4((④))
-  E1 -->|"T4 设计与拆任务读取经验 ⏳"| E5((⑤))
-  E1 -->|"T6 待办、更新记录与说明 ⏳"| E8((⑧))
+  E1((①)) -->|"T1 经验库检查命令 ✅"| E2((②))
+  E1 -->|"T2 收尾检查要求复盘结论 ✅"| E3((③))
+  E1 -->|"T3 working 技能的复盘 ✅"| E4((④))
+  E1 -->|"T4 设计与拆任务读取经验 ✅"| E5((⑤))
+  E1 -->|"T6 待办、更新记录与说明 ✅"| E8((⑧))
   E2 -.->|"虚工作"| E6((⑥))
   E3 -.->|"虚工作"| E6
   E4 -.->|"虚工作"| E6
   E5 -.->|"虚工作"| E6
-  E6 -->|"T5 三份副本与文字测试 ⏳"| E7((⑦))
+  E6 -->|"T5 三份副本与文字测试 ✅"| E7((⑦))
   E7 -.->|"虚工作"| E9((⑨))
   E8 -.->|"虚工作"| E9
-  E9 -->|"T7 合并前全量门禁 ⏳"| E10((⑩))
+  E9 -->|"T7 合并前全量门禁 🔄"| E10((⑩))
   E10 -->|"T8 对照评测 ⏳"| E11((⑪))
 ```
 最长链：4 个任务（T1→T5→T7→T8；等长另有 3 条），至少 4 层
@@ -488,3 +488,10 @@ PROMPT   none
 
 ## Progress
 Ruling: 主线程逐个派发执行，不用后台工作流 — 用户选择；预算 21 经 grant 放宽，评测上限每边 8 美元经用户同意 — 代价是合并与门禁派发由主线程手动做
+T6: complete — 主线程完成，CHECK 三条通过，提交 57df77c
+T4: complete — 合并 e1b752e；verifier pass：6 条 CHECK 通过，diff 只含设计稿要求的四处新增，falsify.md 清单顺延编号无别处按编号引用
+T1: complete — 合并 c7e2d7c；verifier pass：test_lessons.py 16 个用例 OK 与手册逐字一致，--help 含 lessons，手工样例核对空字段、重复、缺标题、围栏标记与上限；完整输出 /home/hertz/Project/miniplan-skills/.git/miniplan/test-logs/20261024T085512Z-130139.log
+T3: repair 1 — reviewer 判 pass 但列 3 条中等措辞缺口：满额淘汰未限定为新条目入库前；淘汰、删除、引用记录未要求写进复盘与汇报；反证顺延时未禁止设已完成；另 3 条低级（只跑一次的表述、check 重复、固化后删条）一并交原 builder 修
+T2: complete — 合并 1929ca6；verifier pass：test_ledger.py 21 个用例 OK，三处测试改动与手册一致，原有用例未放宽，临时仓库核对子目录手册按 git 顶层解析、多条结论取最后一条；完整输出 /home/hertz/Project/miniplan-skills/.git/miniplan/test-logs/20261024T085601Z-136386.log
+T3: complete — 合并 d1d0582；reviewer 复审 pass：修复提交 12866e0 逐条解决 6 条意见，11 条 CHECK 通过，副本构建在临时目录 exit 0
+T5: complete — 合并 5458e9f；verifier pass：build.sh 重建后 codex/qwen 与提交一致，test_skill_text.py 7 个用例 OK，新用例与手册逐字一致，改动只在 OWNS 内，无 AI 署名；完整输出 /home/hertz/Project/miniplan-skills/.git/miniplan/test-logs/20261024T090003Z-165389.log
