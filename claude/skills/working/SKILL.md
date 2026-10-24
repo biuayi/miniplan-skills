@@ -234,8 +234,8 @@ line to `## Progress`. On resume the `## Progress` lines are authoritative;
 
 ## Retrospective
 
-Run once per manual, after the final full gate passes and before the status
-is set to 已完成.
+Do it after the final full gate passes and before the status is set to 已完成.
+When the falsification is deferred, the next run resumes at step 3.
 
 1. **Collect.** The repair, failed, and Ruling lines in `## Progress`; the gate
    logs the ledger lines name; the diffs of the repair commits; the design's
@@ -260,21 +260,23 @@ is set to 已完成.
    each objection in a table in `## 复盘`; an accepted objection that removes
    the candidate's support turns the conclusion into `经验：无`. This dispatch
    is not counted in `预算`; the per-request dispatch limit applies, and at the
-   limit stop here, say so in the report, and dispatch in the next run. Ledger
+   limit stop here: do not set 已完成, say so in the report, and resume the
+   retrospective at step 3 in the next run. Ledger
    `Ruling: 经验反证 — <文件> — <入库 | 不入库，原因>`.
 4. **Write the lessons** per [lesson-template](references/lesson-template.md).
    The main thread, without a critic, also appends citation records to cited
-   lessons, deletes lessons judged 有害, evicts one when the library holds 30
-   (first a lesson whose paths all no longer exist, then the one cited longest
-   ago, uncited ones by source date), and repairs stale paths. Run
+   lessons, deletes lessons judged 有害, repairs stale paths, and, before
+   adding a new lesson when the library holds 30, evicts one (first a lesson
+   whose paths all no longer exist, then the one cited longest ago, uncited
+   ones by source date). Record these actions in `## 复盘` and in the `LESSONS:`
+   line of the report. Run
    `python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" lessons` and commit only
    when it exits 0. The commit touches only `docs/lessons/` and the manual, and
    its message states the lesson. When the project tests `docs/`, run its test
    selection command after the commit.
 5. **Conclude.** The last line of `## 复盘` is `经验：docs/lessons/<文件>.md`
-   or `经验：无`.
-6. **Close.** Set the status to 已完成 and run
-   `python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" check <plan>`.
+   or `经验：无`. Setting 已完成 and running `check` stay in the finish step of
+   the mode in use.
 
 ## Report (user's language)
 
@@ -282,7 +284,7 @@ is set to 已完成.
 PROGRESS: <a>/<b> 任务完成；第 <k> 次运行；最长链还剩 <z> 个任务；派发 <spawned>/<budget>
 ACCEPTANCE: A1 pass / A2 fail (why) / A3 not verified (why)
 RULINGS: decisions made without asking
-LESSONS: <docs/lessons/<文件>.md | 无>；流程观察：<...>；可固化建议：<...>
+LESSONS: <docs/lessons/<文件>.md | 无>；库维护：<引用记录、删除、淘汰、路径修复 | 无>；流程观察：<...>；可固化建议：<...>
 NEXT: what needs the user (approvals, follow-ups, next run), and anything skipped or descoped with why
 ```
 
