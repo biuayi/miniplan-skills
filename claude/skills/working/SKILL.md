@@ -77,7 +77,8 @@ size the user approved; the budget grant does not apply.
      upstream.
    - If nothing needs the user, go back to step 3; the script skips tasks that
      already have a complete line. If something does, write the report and wait.
-6. **Finish.** Set the manual status to 已完成 with the date, then
+6. **Finish.** Do the `## Retrospective` below, then set the manual status to
+   已完成 with the date, then
    `git branch -d` the merged `mp/<topic>/*` branches, `git worktree prune`, and
    run `python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" check <plan>`; it
    removes the run marker. The Stop hook blocks finishing while the ledger and
@@ -105,8 +106,10 @@ gate, repair, and merge scheduler with the Claude workflow.
    outcomes return nonzero and preserve evidence and unfinished worktrees.
 4. Handle main tasks and reported blockers, then resume within the
    manual's remaining budget. Do not reset the budget by
-   rerunning the script. When complete, check the merged diff, mark the manual
-   complete, and commit/push using the user's existing authorization.
+   rerunning the script. When complete, check the merged diff, do the
+   `## Retrospective` below, mark the manual complete, run
+   `python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" check <plan>`, and
+   commit/push using the user's existing authorization.
 
 Use prompt mode when the CLI/runtime is unavailable or the manual cannot be
 run by the script. Do not use that fallback to bypass a failed preflight.
@@ -156,6 +159,9 @@ Used for old-format manuals and wherever a scripted run is unavailable.
   external service, a deploy), a security-sensitive action, or a manual
   defect that makes every path forward a guess. Everything else you
   rule on and ledger as `Ruling: <decision> — <why> — <cost if wrong>`.
+  When the user corrects a practice mid-run, ledger
+  `Ruling: 用户纠正 — <原话摘要>`. While a workflow runs in the background,
+  keep it in the session and write it with the returned ledger lines.
 - Budget: if `预算` exceeds the default and the user agreed to it,
 <!-- host:claude-code -->
   run once, now, from your own Bash tool:
@@ -226,12 +232,57 @@ Lines: `T<n>: complete — <evidence pointer>`, `T<n>: repair 1 — <finding>`,
 line to `## Progress`. On resume the `## Progress` lines are authoritative;
 `miniplan.py check <plan>` lists any disagreement with the diagram.
 
+## Retrospective
+
+Run once per manual, after the final full gate passes and before the status
+is set to 已完成.
+
+1. **Collect.** The repair, failed, and Ruling lines in `## Progress`; the gate
+   logs the ledger lines name; the diffs of the repair commits; the design's
+   `## 引用经验`.
+2. **Write `## 复盘`** at the end of the manual:
+   - One judgement line per repair, failed task, ruling, user correction, and
+     cited lesson: `<对象> | <改动或做法> | <观察到的差异与出处> | <判定>`.
+     Verdicts: 有效, 有害, 无可见效果, 无法归因, 用户纠正. 有效 needs all of:
+     the same acceptance command failed before the change (quote the failing
+     line) and passed after it; the change targets one cause; nothing passed
+     on retry. A change that broke something is 有害. A practice the user
+     explicitly corrected during the run is 用户纠正. Anything uncertain is
+     无法归因.
+   - At most one candidate lesson, or `经验：无`. A lesson must hold for this
+     repository's code, tests, commands, interfaces, or data; a practice that
+     holds in any unrelated repository is a process lesson and is not kept.
+   - Process observations and suggestions to turn a practice into a test, lint
+     rule, or hook: list them here and in the report only. Do not implement
+     them and do not write them to any long-term file.
+3. **Falsify.** When there is a candidate or two lessons are merged, dispatch
+   one `critic` with [lesson-falsify](references/lesson-falsify.md). Rule on
+   each objection in a table in `## 复盘`; an accepted objection that removes
+   the candidate's support turns the conclusion into `经验：无`. This dispatch
+   is not counted in `预算`; the per-request dispatch limit applies, and at the
+   limit stop here, say so in the report, and dispatch in the next run. Ledger
+   `Ruling: 经验反证 — <文件> — <入库 | 不入库，原因>`.
+4. **Write the lessons** per [lesson-template](references/lesson-template.md).
+   The main thread, without a critic, also appends citation records to cited
+   lessons, deletes lessons judged 有害, evicts one when the library holds 30
+   (first a lesson whose paths all no longer exist, then the one cited longest
+   ago, uncited ones by source date), and repairs stale paths. Run
+   `python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" lessons` and commit only
+   when it exits 0. The commit touches only `docs/lessons/` and the manual, and
+   its message states the lesson. When the project tests `docs/`, run its test
+   selection command after the commit.
+5. **Conclude.** The last line of `## 复盘` is `经验：docs/lessons/<文件>.md`
+   or `经验：无`.
+6. **Close.** Set the status to 已完成 and run
+   `python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" check <plan>`.
+
 ## Report (user's language)
 
 ```text
 PROGRESS: <a>/<b> 任务完成；第 <k> 次运行；最长链还剩 <z> 个任务；派发 <spawned>/<budget>
 ACCEPTANCE: A1 pass / A2 fail (why) / A3 not verified (why)
 RULINGS: decisions made without asking
+LESSONS: <docs/lessons/<文件>.md | 无>；流程观察：<...>；可固化建议：<...>
 NEXT: what needs the user (approvals, follow-ups, next run), and anything skipped or descoped with why
 ```
 
@@ -240,8 +291,10 @@ In workflow mode a run is one Workflow call.
 <!-- /host -->
 In prompt mode a run is one stretch of work between user prompts.
 The user's reply starts the next run and resets the spawn count. On the
-final run: revoke the budget grant if one was made, set the manual status
-to 已完成 with the date, and list anything still not verified. Nothing is
+final run: revoke the budget grant if one was made, do the `## Retrospective`,
+set the manual status to 已完成 with the date, run
+`python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" check <plan>`, and list
+anything still not verified. Nothing is
 reported as done without a pass line with evidence.
 
 ## Anti-patterns
