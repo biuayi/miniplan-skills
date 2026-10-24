@@ -38,6 +38,13 @@ Ground every question in facts. Read the code, docs, or device the request
 touches; past the base layer's fan-out trigger, send `scout`s instead. A
 question a scout could answer is not asked.
 
+When `docs/lessons/` exists, run
+`python3 -I "${CLAUDE_PLUGIN_ROOT}/bin/miniplan.py" lessons` and read the
+situation it lists for each entry; open only the entries that match. If the
+command reports a stale entry, note it in the design. Facts inside a lesson
+are assumptions: re-check them against the code before relying on them. List
+every lesson you use under `## 引用经验` in the design.
+
 Spike path: the investigation itself is this phase. Ask the one question,
 fan out scouts by module, then write the report (what exists, grouped the way
 the audience thinks, each claim with a file pointer; gaps and risks last).

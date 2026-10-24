@@ -131,6 +131,9 @@ error handling", "同 T<n>", "为上述内容写测试" without the test text,
   CHECK, OWNERSHIP equal to OWNS, and CONTEXT holding only the facts that
   agent needs,
   each with its source (path:line or command) or marked assumption — never the conversation, never the whole design.
+- When a lesson listed under `## 引用经验` in the design bears on a task's
+  CHECK or contract, put its practice in that task's PROMPT CONTEXT with the
+  lesson path as the source, marked `经验，待核对`.
 - Gate per task: `verifier` when CHECK is runnable, `reviewer` when the risk
   is logic or security, both only for high-risk tasks. AGENTS names roles
   bare; `working` spawns them as `miniplan:<role>`.
@@ -141,7 +144,8 @@ error handling", "同 T<n>", "为上述内容写测试" without the test text,
 readers, builder, and gates, plus one merge runner per builder task, plus a
 repair margin. `lint` computes the base spawns and fails when they exceed
 `预算`. The user approves the figure with the manual; if it is above the default
-from `miniplan:agents`, say so in the approval question.
+from `miniplan:agents`, say so in the approval question. `预算` 不含收尾复盘的反证
+(main spawns it at the finish under the per-request cap).
 
 ## Self-check before presenting
 
