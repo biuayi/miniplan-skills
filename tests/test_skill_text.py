@@ -68,3 +68,29 @@ class SkillText(unittest.TestCase):
         context = json.loads(r.stdout)['hookSpecificOutput']['additionalContext']
         size = len(context.replace(CLAUDE, '${CLAUDE_PLUGIN_ROOT}').encode('utf-8'))
         self.assertLessEqual(size, 9216)
+
+    def test_retrospective_reaches_every_host(self):
+        for rel in ('claude/skills/working/SKILL.md', 'codex/skills/miniplan-working/SKILL.md',
+                    'qwen/skills/working/SKILL.md'):
+            with open(os.path.join(ROOT, rel), encoding='utf-8') as f:
+                text = f.read()
+            self.assertIn('## 复盘', text, rel)
+            self.assertRegex(text, r'miniplan\.py"? lessons', rel)
+            self.assertIn('Ruling: 经验反证 — ', text, rel)
+        for rel in ('codex/skills/miniplan-working/references/lesson-falsify.md',
+                    'qwen/skills/working/references/lesson-template.md'):
+            self.assertTrue(os.path.exists(os.path.join(ROOT, rel)), rel)
+
+    def test_codex_brainstorming_reads_lessons(self):
+        with open(os.path.join(ROOT, 'codex', 'skills', 'miniplan-brainstorming', 'SKILL.md'), encoding='utf-8') as f:
+            self.assertRegex(f.read(), r'miniplan\.py"? lessons')
+
+    def test_design_and_plans_cite_lessons(self):
+        def text(*parts):
+            with open(os.path.join(SKILLS, *parts), encoding='utf-8') as f:
+                return f.read()
+        self.assertIn('\n## 引用经验\n', text('brainstorming', 'references', 'design-template.md'))
+        self.assertIn('docs/lessons/', text('brainstorming', 'references', 'falsify.md'))
+        plans = text('plans', 'SKILL.md')
+        self.assertIn('经验，待核对', plans)
+        self.assertIn('不含收尾复盘的反证', plans)

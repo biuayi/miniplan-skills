@@ -230,6 +230,31 @@ def _remove_marker(session):
         return False
 
 
+RETRO_RE = re.compile(r'^经验：(无|docs/lessons/[^\s/]+\.md)$')
+
+
+def _retro_problems(m, plan):
+    span = _span(m.lines, '复盘')
+    verdict = None
+    if span:
+        for ln in m.lines[span[0] + 1:span[1]]:
+            mt = RETRO_RE.match(ln)
+            if mt:
+                verdict = mt.group(1)
+    if verdict is None:
+        return ['C_NO_RETRO 缺少复盘结论']
+    if verdict == '无':
+        return []
+    repo = _git(os.path.dirname(os.path.abspath(plan)), 'rev-parse', '--show-toplevel')
+    root = repo.stdout.strip() if repo.returncode == 0 and repo.stdout.strip() else os.getcwd()
+    if not os.path.isfile(os.path.join(root, verdict)):
+        return ['C_NO_RETRO %s 不存在' % verdict]
+    prefix = 'Ruling: 经验反证 — %s — ' % verdict
+    if not any(e['text'].startswith(prefix) for e in m['progress']):
+        return ['C_NO_RETRO %s 没有经验反证记录' % verdict]
+    return []
+
+
 def cmd_check(ns):
     m = _load(ns.plan)
     if m is None:
@@ -245,9 +270,12 @@ def cmd_check(ns):
                 problems.append('C_GLYPH %s diagram=%s ledger=%s' % (tid, shown, have))
     for tid in _merged_unledgered(m, ns.plan):
         problems.append('C_MERGED_UNLEDGERED %s' % tid)
+    completed = m['header'].get('状态', '').startswith('已完成')
+    if completed:
+        problems += _retro_problems(m, ns.plan)
     for p in problems:
         print(p)
-    if m['header'].get('状态', '').startswith('已完成') and _remove_marker(ns.session):
+    if completed and not problems and _remove_marker(ns.session):
         print('marker removed')
     return 1 if problems else 0
 

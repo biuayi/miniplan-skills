@@ -10,9 +10,10 @@ OBJECTIVE: Falsify the design draft at <design file path>. Find where it
 SCOPE: Read-only. Must read, in this order:
   1. <design file>
   2. <files the design claims facts about: paths>
-  3. <hooks / configs / role files it depends on>
-  4. <what it replaces or migrates away from>
-  5. <source material it says it borrows from, if local>
+  3. <the `docs/lessons/` entries listed under 引用经验 in the design>
+  4. <hooks / configs / role files it depends on>
+  5. <what it replaces or migrates away from>
+  6. <source material it says it borrows from, if local>
   Do not fetch the web unless listed here.
 CONTEXT: <3-6 lines: who the user is, the hard constraints (budget, hooks,
   permissions), what "done" means to the user>

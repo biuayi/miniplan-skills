@@ -36,7 +36,7 @@ Beyond title, design file, and `状态：草稿`, the header carries:
 预算：<N>                total agents for the manual = base spawns + repair margin
 工作树准备：<shell>       optional; first command in a new worktree, e.g. npm ci --prefer-offline
 槽位环境：<shell>         optional; per-slot ports etc., keyed on MINIPLAN_SLOT, e.g.
-                         export EIM_WEBUI_PORT=$((4300+10*MINIPLAN_SLOT)) EIM_MOCK_WORKERS=2
+                         export APP_PORT=$((4300+10*MINIPLAN_SLOT))
 ```
 
 `miniplan.py lint` prints the base spawns and the repair margin; set `预算` to
@@ -56,7 +56,6 @@ AGENTS   role + OWNS for each; "main" when the main thread does it
 PROMPT   one filled Task Contract per agent (ACCEPTANCE = CHECK verbatim)
 ```
 
-- No `ROUND` field; an old manual's `ROUND` lines are ignored.
 - `DEPENDS T2, T3@e2e-live`: a plain id is a data edge (the task consumes the
   other's result); `@<resource>` is a resource edge (order only, no data). Every
   resource named after `@` appears in some task's `USES`, and two tasks that
@@ -75,37 +74,15 @@ PROMPT   one filled Task Contract per agent (ACCEPTANCE = CHECK verbatim)
 ## 箭线图 (arrow diagram): mandatory
 
 Every manual opens with one activity-on-arrow network under `## 箭线图`, above
-`## Tasks`. It is generated, never drawn by hand:
+`## Tasks`, generated from DEPENDS and never drawn by hand:
 
 ```bash
 python3 -I "<miniplan-agents>/bin/miniplan.py" diagram --write <plan>
 ```
 
-`diagram` builds it from DEPENDS and `working` refreshes the status glyphs
-through the ledger. A manual without the diagram is not ready to present. The
-generated shape follows these rules:
-
-- **Tasks are the arrows; the nodes are events.** An arrow is labelled
-  `T<n> <title> <status>`; a node is a moment in time, written
-  `E<k>(("<k>"))` with a circled numeral.
-- **Numbering.** One start event ① and one end event. Every arrow runs from a
-  smaller number to a larger one. A task with `DEPENDS none` leaves ①; a task
-  nothing depends on enters the end event.
-- **Dummy activities** — `-.->|"虚工作"|` — carry a dependency that no task
-  performs. Two tasks sharing only part of their predecessors need one, and so
-  do two tasks that would otherwise run between the same pair of events.
-- **Resource edges** are dummy activities drawn `-.->|"资源:<name>"|`; the
-  scheduler runs the two tasks in that order.
-- **Status glyph**, one per arrow: `⏳未开始` `🔄进行中` `✅完成` `🔁返工`
-  `❌失败`. Everything is ⏳ at planning time.
-- **One line under the diagram**: `最长链：<n> 个任务（T1→T2→T4），至少 <n> 层`
-  — the deepest chain of tasks, counted in tasks, and the tasks on it.
-- There is no `## Rounds` section.
-
-No arrow carries a duration or a date; the diagram's only length is the task
-count along a chain, the floor on the number of layers. Do not edit the diagram
-by hand: change DEPENDS and run `diagram --write` again; `lint` reports a
-diagram that differs from the generated one.
+To change it, change DEPENDS and rerun; `lint` reports a diagram that differs
+from the generated one, and `working` refreshes the status glyphs through the
+ledger. A manual without the diagram is not ready to present.
 
 ## CHECK: executable acceptance, two cases
 
@@ -122,6 +99,9 @@ the gate, after the builder's step; that is not a manual defect.
   file exists, the section is present, or the device prints the expected
   state), the case names, one assertion per line. The task writes the bodies;
   the gate runs the command.
+- **Bug fix**: the CHECK names a test that reproduces the bug. The builder's
+  PROMPT says to run it before changing code and return the failing output in
+  EVIDENCE; the gate runs it after the change and it must pass.
 
 These are plan failures: "TBD", "TODO", "处理边界情况", "add appropriate
 error handling", "同 T<n>", "为上述内容写测试" without the test text,
@@ -144,6 +124,8 @@ error handling", "同 T<n>", "为上述内容写测试" without the test text,
   the same file, schema, lockfile, or generated output are ordered by DEPENDS
   or a resource edge.
 - Trivial edits are `main` tasks: no spawn, still a CHECK.
+- High-risk tasks go first, so a failure surfaces before the work that depends
+  on it.
 
 ## AGENTS and PROMPT
 
@@ -151,7 +133,11 @@ error handling", "同 T<n>", "为上述内容写测试" without the test text,
   disjoint questions, a runner collecting evidence before a builder. Each
   gets its own Task Contract with OBJECTIVE from GOAL, ACCEPTANCE equal to
   CHECK, OWNERSHIP equal to OWNS, and CONTEXT holding only the facts that
-  agent needs — never the conversation, never the whole design.
+  agent needs,
+  each with its source (path:line or command) or marked assumption — never the conversation, never the whole design.
+- When a lesson listed under `## 引用经验` in the design bears on a task's
+  CHECK or contract, put its practice in that task's PROMPT CONTEXT with the
+  lesson path as the source, marked `经验，待核对`.
 - Gate per task: `verifier` when CHECK is runnable, `reviewer` when the risk
   is logic or security, both only for high-risk tasks. AGENTS names roles
   bare; `working` spawns them as `<role>` (bare name on Codex).
@@ -162,7 +148,8 @@ error handling", "同 T<n>", "为上述内容写测试" without the test text,
 readers, builder, and gates, plus one merge runner per builder task, plus a
 repair margin. `lint` computes the base spawns and fails when they exceed
 `预算`. The user approves the figure with the manual; if it is above the default
-from `$miniplan-agents`, say so in the approval question.
+from `$miniplan-agents`, say so in the approval question. `预算` 不含收尾复盘的反证
+(main spawns it at the finish under the per-request cap).
 
 ## Self-check before presenting
 
@@ -184,13 +171,3 @@ default budget, ask in the same question whether to raise it for this run. On
 approval, write the status line `状态：已批准（YYYY-MM-DD）` into the header and
 invoke `$miniplan-working` with the manual path. On "change", edit, rerun
 `diagram --write` and `lint`, and re-present the changed tasks only.
-
-## Anti-patterns
-
-- A CHECK written from memory of an API instead of a read signature.
-- Ten tasks and one gate at the end.
-- Interfaces that appear in T7 but were never defined in any DELIVER.
-- A serial chain of N ≥ 4 tasks with no `串行理由` and no interface split.
-- A full-suite command in the CHECK of a task that is not a sink.
-- A shared event standing in for a 虚工作, so two unrelated tasks appear to
-  wait on each other.
