@@ -17,6 +17,15 @@ def read(p):
         return f.read()
 
 
+RETRO_NONE = '\n## 复盘\n\n经验：无\n'
+
+
+def complete(p, extra=''):
+    text = read(p).replace('状态：已批准', '状态：已完成', 1) + extra
+    with open(p, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+
 class LedgerBase(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix='mp-ledger-')
@@ -146,6 +155,46 @@ class CheckCommand(LedgerBase):
         self.assertEqual(run_cli('check', plan).returncode, 0)
 
 
+class RetroCheck(LedgerBase):
+    def setUp(self):
+        super().setUp()
+        run_cli('ledger', self.p, stdin='T1: complete\n')
+
+    def check(self):
+        return run_cli('check', self.p, cwd=self.tmp)
+
+    def test_not_completed_needs_no_retro(self):
+        self.assertEqual(self.check().returncode, 0)
+
+    def test_completed_manual_needs_retro(self):
+        complete(self.p)
+        r = self.check()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('C_NO_RETRO', r.stdout)
+
+    def test_retro_without_lesson(self):
+        complete(self.p, RETRO_NONE)
+        self.assertEqual(self.check().returncode, 0)
+
+    def test_retro_names_missing_lesson_file(self):
+        run_cli('ledger', self.p, stdin='Ruling: 经验反证 — docs/lessons/a.md — 入库\n')
+        complete(self.p, '\n## 复盘\n\n经验：docs/lessons/a.md\n')
+        r = self.check()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('C_NO_RETRO', r.stdout)
+
+    def test_retro_lesson_needs_falsification_ruling(self):
+        os.makedirs(os.path.join(self.tmp, 'docs', 'lessons'))
+        with open(os.path.join(self.tmp, 'docs', 'lessons', 'a.md'), 'w', encoding='utf-8') as f:
+            f.write('# a\n')
+        complete(self.p, '\n## 复盘\n\n经验：docs/lessons/a.md\n')
+        r = self.check()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('C_NO_RETRO', r.stdout)
+        run_cli('ledger', self.p, stdin='Ruling: 经验反证 — docs/lessons/a.md — 入库\n')
+        self.assertEqual(self.check().returncode, 0)
+
+
 class MarkerCleanup(LedgerBase):
     def setUp(self):
         super().setUp()
@@ -158,13 +207,18 @@ class MarkerCleanup(LedgerBase):
 
     def test_check_removes_marker_when_completed(self):
         run_cli('ledger', self.p, stdin='T1: complete\n')
-        text = read(self.p).replace('状态：已批准', '状态：已完成', 1)
-        with open(self.p, 'w', encoding='utf-8') as f:
-            f.write(text)
+        complete(self.p, RETRO_NONE)
         r = run_cli('check', self.p, '--session', 'S1', env=self.env)
         self.assertEqual(r.returncode, 0, r.stdout)
         self.assertFalse(os.path.exists(self.marker))
         self.assertIn('marker removed', r.stdout)
+
+    def test_check_keeps_marker_when_completed_with_problems(self):
+        run_cli('ledger', self.p, stdin='T1: complete\n')
+        complete(self.p)
+        r = run_cli('check', self.p, '--session', 'S1', env=self.env)
+        self.assertEqual(r.returncode, 1)
+        self.assertTrue(os.path.exists(self.marker))
 
     def test_check_keeps_marker_when_not_completed(self):
         run_cli('check', self.p, '--session', 'S1', env=self.env)
