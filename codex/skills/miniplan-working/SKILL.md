@@ -52,8 +52,10 @@ gate, repair, and merge scheduler with the Claude workflow.
    outcomes return nonzero and preserve evidence and unfinished worktrees.
 4. Handle main tasks and reported blockers, then resume within the
    manual's remaining budget. Do not reset the budget by
-   rerunning the script. When complete, check the merged diff, mark the manual
-   complete, and commit/push using the user's existing authorization.
+   rerunning the script. When complete, check the merged diff, do the
+   `## Retrospective` below, mark the manual complete, run
+   `python3 -I "<miniplan-agents>/bin/miniplan.py" check <plan>`, and
+   commit/push using the user's existing authorization.
 
 Use prompt mode when the CLI/runtime is unavailable or the manual cannot be
 run by the script. Do not use that fallback to bypass a failed preflight.
@@ -81,8 +83,7 @@ Used for old-format manuals and wherever a scripted run is unavailable.
   `miniplan.py merge-check <plan> <T> <branch>` (non-zero exit: do not merge),
   then `git merge --no-ff -m "<task title>" <branch>` in the integration copy,
   then `git worktree remove <path>`. On a conflict, `git merge --abort` and send
-  the task's builder to merge the integration branch inside its own worktree;
-  that is the task's one repair, followed by a re-gate.
+  the task's builder to merge the integration branch inside its own worktree, then re-gate. A conflict is handled once even after a repair; one handled before any repair uses up the repair.
 - Send the manual's PROMPT verbatim with `agent_type: <role>`
   (the AGENTS field names the role bare). Add only facts that came into
   existence after planning (a path a previous task created). Never forward
@@ -95,6 +96,9 @@ Used for old-format manuals and wherever a scripted run is unavailable.
   external service, a deploy), a security-sensitive action, or a manual
   defect that makes every path forward a guess. Everything else you
   rule on and ledger as `Ruling: <decision> — <why> — <cost if wrong>`.
+  When the user corrects a practice mid-run, ledger
+  `Ruling: 用户纠正 — <原话摘要>`. While a workflow runs in the background,
+  keep it in the session and write it with the returned ledger lines.
 - Budget: if `预算` exceeds the default and the user agreed to it,
   tell the user to relaunch codex with `CODEX_AGENT_GUARD_BUDGET=<N>` exported
   (no per-session grant on Codex), or split the work across user prompts.
@@ -106,11 +110,14 @@ Used for old-format manuals and wherever a scripted run is unavailable.
   command. The gate receives the CHECK text and the design's A<i>, not the
   builder's summary. Verdict per CHECK: pass / fail /
   not verifiable.
+- For a task with a builder, the gate also checks that tests were not weakened:
+  a test body given in the CHECK is compared with the worktree, and in the
+  task's diff against the integration branch a removed or loosened assertion or
+  a new skip marker is a fail that quotes the removed line, unless the
+  contract's GOAL or ACCEPTANCE asks for it.
 - Ledger on the gate's evidence. After merging, spot-check the merge diff. If
   you and the gate disagree, the report says so; do not pick one silently.
-- Fail: one repair round, with the gate's findings as the changed input, then
-  re-gate the fix only. A second fail goes to the user.
-  `judge` only when the user asks.
+- Fail: one repair round. Its contract carries the failing command and its output, and the builder states a one-line root-cause hypothesis before editing, quoting the line of failing output it rests on (from the gate's log when one is named, otherwise the gate's finding verbatim), and changes only code tied to the gate's findings. Re-gate the fix only. A second fail goes to the user. `judge` only when the user asks.
 - A child returning `blocked` or `partial` with a question: answer from the
   design or manual and respawn once with the answer; otherwise carry it to the
   user.
@@ -142,29 +149,71 @@ Lines: `T<n>: complete — <evidence pointer>`, `T<n>: repair 1 — <finding>`,
 line to `## Progress`. On resume the `## Progress` lines are authoritative;
 `miniplan.py check <plan>` lists any disagreement with the diagram.
 
+## Retrospective
+
+Do it after the final full gate passes and before the status is set to 已完成.
+When the falsification is deferred, the next run resumes at step 3.
+
+1. **Collect.** The repair, failed, and Ruling lines in `## Progress`; the gate
+   logs the ledger lines name; the diffs of the repair commits; the design's
+   `## 引用经验`.
+2. **Write `## 复盘`** at the end of the manual:
+   - One judgement line per repair, failed task, ruling, user correction, and
+     cited lesson: `<对象> | <改动或做法> | <观察到的差异与出处> | <判定>`.
+     Verdicts: 有效, 有害, 无可见效果, 无法归因, 用户纠正. 有效 needs all of:
+     the same acceptance command failed before the change (quote the failing
+     line) and passed after it; the change targets one cause; nothing passed
+     on retry. A change that broke something is 有害. A practice the user
+     explicitly corrected during the run is 用户纠正. Anything uncertain is
+     无法归因.
+   - At most one candidate lesson, or `经验：无`. A lesson must hold for this
+     repository's code, tests, commands, interfaces, or data; a practice that
+     holds in any unrelated repository is a process lesson and is not kept.
+   - Process observations and suggestions to turn a practice into a test, lint
+     rule, or hook: list them here and in the report only. Do not implement
+     them and do not write them to any long-term file.
+3. **Falsify.** When there is a candidate or two lessons are merged, dispatch
+   one `critic` with [lesson-falsify](references/lesson-falsify.md). Rule on
+   each objection in a table in `## 复盘`; an accepted objection that removes
+   the candidate's support turns the conclusion into `经验：无`. This dispatch
+   is not counted in `预算`; the per-request dispatch limit applies, and at the
+   limit stop here: do not set 已完成, say so in the report, and resume the
+   retrospective at step 3 in the next run. Ledger
+   `Ruling: 经验反证 — <文件> — <入库 | 不入库，原因>`.
+4. **Write the lessons** per [lesson-template](references/lesson-template.md).
+   The main thread, without a critic, also appends citation records to cited
+   lessons, deletes lessons judged 有害, repairs stale paths, and, before
+   adding a new lesson when the library holds 30, evicts one (first a lesson
+   whose paths all no longer exist, then the one cited longest ago, uncited
+   ones by source date). Record these actions in `## 复盘` and in the `LESSONS:`
+   line of the report. Run
+   `python3 -I "<miniplan-agents>/bin/miniplan.py" lessons` and commit only
+   when it exits 0. The commit touches only `docs/lessons/` and the manual, and
+   its message states the lesson. When the project tests `docs/`, run its test
+   selection command after the commit.
+5. **Conclude.** The last line of `## 复盘` is `经验：docs/lessons/<文件>.md`
+   or `经验：无`. Setting 已完成 and running `check` stay in the finish step of
+   the mode in use.
+
 ## Report (user's language)
 
 ```text
 PROGRESS: <a>/<b> 任务完成；第 <k> 次运行；最长链还剩 <z> 个任务；派发 <spawned>/<budget>
-ACCEPTANCE: A1 pass (evidence) / A2 fail (why) / A3 not verified (why)
-CHANGES: files, systems, commands run
+ACCEPTANCE: A1 pass / A2 fail (why) / A3 not verified (why)
 RULINGS: decisions made without asking
-LEFT OUT: skipped or descoped, and why
-NEXT: what needs the user (approvals, follow-ups, next run)
+LESSONS: <docs/lessons/<文件>.md | 无>；库维护：<引用记录、删除、淘汰、路径修复 | 无>；流程观察：<...>；可固化建议：<...>
+NEXT: what needs the user (approvals, follow-ups, next run), and anything skipped or descoped with why
 ```
 
 In prompt mode a run is one stretch of work between user prompts.
 The user's reply starts the next run and resets the spawn count. On the
-final run: revoke the budget grant if one was made, set the manual status
-to 已完成 with the date, and list anything still not verified. Nothing is
+final run: revoke the budget grant if one was made, do the `## Retrospective`,
+set the manual status to 已完成 with the date, run
+`python3 -I "<miniplan-agents>/bin/miniplan.py" check <plan>`, and list
+anything still not verified. Nothing is
 reported as done without a pass line with evidence.
 
 ## Anti-patterns
 
 - Reporting the builder's VALIDATION as verification.
 - Fixing the gate's findings in the main thread and skipping the re-gate.
-- Re-dispatching a task that has a complete line.
-- Ending a run on an unverified builder.
-- Ledgering a task complete while its arrow in the 箭线图 still reads ⏳.
-- Raising the budget without the approval recorded in the manual header.
-- Running a full suite in a builder, or again after the final gate ran it.
