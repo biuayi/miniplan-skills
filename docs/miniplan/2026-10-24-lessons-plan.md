@@ -1,7 +1,7 @@
 # 手册复盘与项目经验库 任务手册
 
 设计稿：docs/miniplan/2026-10-24-lessons-design.md（已批准 2026-10-24）
-状态：已批准（2026-10-24）
+状态：已完成（2026-10-24）
 集成分支：lessons
 并发：6
 测试并发：3
@@ -33,8 +33,8 @@ flowchart LR
   E6 -->|"T5 三份副本与文字测试 ✅"| E7((⑦))
   E7 -.->|"虚工作"| E9((⑨))
   E8 -.->|"虚工作"| E9
-  E9 -->|"T7 合并前全量门禁 🔄"| E10((⑩))
-  E10 -->|"T8 对照评测 ⏳"| E11((⑪))
+  E9 -->|"T7 合并前全量门禁 ✅"| E10((⑩))
+  E10 -->|"T8 对照评测 ✅"| E11((⑪))
 ```
 最长链：4 个任务（T1→T5→T7→T8；等长另有 3 条），至少 4 层
 状态：⏳未开始 🔄进行中 ✅完成 🔁返工 ❌失败（working 每次记账后同步刷新）
@@ -495,3 +495,28 @@ T3: repair 1 — reviewer 判 pass 但列 3 条中等措辞缺口：满额淘汰
 T2: complete — 合并 1929ca6；verifier pass：test_ledger.py 21 个用例 OK，三处测试改动与手册一致，原有用例未放宽，临时仓库核对子目录手册按 git 顶层解析、多条结论取最后一条；完整输出 /home/hertz/Project/miniplan-skills/.git/miniplan/test-logs/20261024T085601Z-136386.log
 T3: complete — 合并 d1d0582；reviewer 复审 pass：修复提交 12866e0 逐条解决 6 条意见，11 条 CHECK 通过，副本构建在临时目录 exit 0
 T5: complete — 合并 5458e9f；verifier pass：build.sh 重建后 codex/qwen 与提交一致，test_skill_text.py 7 个用例 OK，新用例与手册逐字一致，改动只在 OWNS 内，无 AI 署名；完整输出 /home/hertz/Project/miniplan-skills/.git/miniplan/test-logs/20261024T090003Z-165389.log
+T7: complete — verifier pass：d16ef1a 上 bash tests/run.sh 289 个用例 OK（原 264 加新增 25）；完整输出 /home/hertz/Project/miniplan-skills/.git/miniplan/test-logs/20261024T090035Z-173233.log
+T8: complete — 主线程运行 eval_compare.py claude --base main --max-cost-usd 8，exit 0；基线 294d885，24 次运行，13 个评分项全部一致、无退化；费用基线 1.72、改后 1.67 美元；结果目录在会话草稿 eval
+
+## 复盘
+
+判定行：
+
+| 对象 | 改动或做法 | 观察到的差异与出处 | 判定 |
+| --- | --- | --- | --- |
+| 收尾检查要求复盘结论（builder 开发中） | 契约 CONTEXT 写成属性访问 `m.progress`，builder 改为 `m['progress']` | builder 自报首次运行 test_ledger.py 报 AttributeError；主线程在样例手册上复现 `AttributeError: 'Manual' object has no attribute 'progress'`，`m['progress']` 可用 | 有效（只支撑「手册解析结果用下标访问」这一事实） |
+| working 技能的复盘（修复一轮） | 一次修 6 处措辞：满额淘汰限定为入库前、库维护写进复盘与汇报、反证顺延时不设已完成等 | 审查意见 3 中 4 低，复审全部 resolved；修复前后 CHECK 都通过，没有执行上的前后对照，且同时改了多处 | 无法归因 |
+| Ruling：主线程逐个派发，预算 21 | 用户选择 | 全程未触及派发上限，无阻塞 | 无可见效果 |
+| 被引用的经验 | 设计稿没有引用经验（本仓库还没有经验库） | 无 | 无 |
+
+候选经验：无。唯一的有效行支撑的是代码事实（手册解析结果是字典，只有 path 与 lines 是属性），对应做法「写契约前先核对接口的访问方式」换到任何仓库都成立，属于流程类；plans 已有「CHECK 与 PROMPT 只用读到的名字」。
+
+流程观察（不入库）：
+- `miniplan.py prompt` 只输出 PROMPT 段，通用约束、工作树路径与命令前缀要主线程逐份手工拼进契约
+- 主线程在完成检查任务的契约里把 `m['progress']` 写成 `m.progress`，违反「契约只用读到的名字」
+- reviewer 判 pass 但附中等意见时，working 没写这算不算失败；本次按一次修复处理并复审
+- 设计反证一轮接受 10 条修改，属于较大改动，没有做第二轮反证
+
+可固化建议：无
+
+经验：无
